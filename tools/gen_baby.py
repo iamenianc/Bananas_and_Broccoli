@@ -146,14 +146,15 @@ def build(eye_kind, mouth_kind, hands_kind, blush=True):
     if blush:
         cheeks(g, 12)
     mouth(g, mouth_kind)
-    hands(g, hands_kind)
+    if hands_kind:                      # hands only drawn for the blocking pose
+        hands(g, hands_kind)
     return g
 
 
 SPRITES = {
-    'catch': build('open',  'small', 'open'),
+    'catch': build('open',  'small', None),    # no hands until blocking
     'swat':  build('angry', 'flat',  'fist', blush=False),
-    'eat':   build('happy', 'open',  'open'),
+    'eat':   build('happy', 'open',  None),    # no hands until blocking
 }
 
 
