@@ -294,8 +294,37 @@ function loop(t){
   requestAnimationFrame(loop);
 }
 
+/* ---- fullscreen ---------------------------------------------------------
+   Browsers refuse to enter fullscreen without a user gesture, so we can't
+   force it on load. Instead we request it on the very first interaction
+   (and again on START), which is as close to "on opening" as is allowed.
+   Installed as a PWA, the manifest's display:fullscreen already applies. */
+function goFullscreen(){
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen
+            || el.mozRequestFullScreen || el.msRequestFullscreen;
+  const active = document.fullscreenElement || document.webkitFullscreenElement;
+  if (req && !active){
+    try { const p = req.call(el); if (p && p.catch) p.catch(()=>{}); } catch(e){}
+  }
+  // best-effort landscape lock (supported only in some fullscreen browsers)
+  const lock = screen.orientation && screen.orientation.lock;
+  if (lock){ try { screen.orientation.lock('landscape').catch(()=>{}); } catch(e){} }
+}
+// arm on the first gesture anywhere, so opening + first tap goes fullscreen
+(function armFullscreen(){
+  const once = ()=>{
+    goFullscreen();
+    window.removeEventListener('pointerdown', once);
+    window.removeEventListener('keydown', once);
+  };
+  window.addEventListener('pointerdown', once);
+  window.addEventListener('keydown', once);
+})();
+
 /* ---- state transitions ---- */
 function startGame(){
+  goFullscreen();
   reset();
   state = State.PLAY;
   document.getElementById('start').classList.add('hidden');
