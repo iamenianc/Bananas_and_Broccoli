@@ -41,6 +41,7 @@ let score = 0;
 let elapsed = 0;         // seconds alive
 let spawnTimer = 0;
 let holding = false;     // finger down = swatting
+let swatHoldTimer = 0;   // tolerance buffer for taps
 let broccoliEaten = 0;   // counts toward the lose condition
 let happyTimer   = 0;    // >0 while baby shows the eating-banana face
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
@@ -50,7 +51,7 @@ let lastT = 0;
 
 function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
-  holding = false; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
+  holding = false; swatHoldTimer = 0; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
   bananaStreak = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
@@ -74,6 +75,13 @@ function babyPos(){
   return { x: CONFIG.babyXFromLeft, y: VH/2 };
 }
 
+function babyHandPos(){
+  const baby = babyPos();
+  const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
+  const handOffset = 12 * CONFIG.babyPixel * babyScale;
+  return { x: baby.x + handOffset, y: baby.y };
+}
+
 function currentSpeed(){
   const base = Math.min(CONFIG.maxSpeed,
     CONFIG.baseSpeed + CONFIG.accelPerSec*elapsed);
@@ -92,14 +100,14 @@ function spawnOne(sy, isDecoy){
     type = Math.random() < CONFIG.broccoliChance ? 'broccoli' : 'banana';
   }
   const r = CONFIG.itemRadius;
-  const baby = babyPos();
+  const target = babyHandPos();
   const sx = VW + r;
-  // real items aim at the baby; decoys aim at a point well above/below
+  // real items aim at the target (baby's hands); decoys aim at a point well above/below
   // the catch zone so they sail past and miss.
   const aimY = isDecoy
-    ? baby.y + (Math.random()<0.5 ? -1 : 1) * CONFIG.decoyMissOffset
-    : baby.y;
-  const dx = baby.x - sx, dy = aimY - sy;
+    ? target.y + (Math.random()<0.5 ? -1 : 1) * CONFIG.decoyMissOffset
+    : target.y;
+  const dx = target.x - sx, dy = aimY - sy;
   const len = Math.hypot(dx, dy) || 1;
   const sp = currentSpeed();
   // Stagger arrivals: nudge this item's launch delay until its predicted
@@ -128,11 +136,11 @@ function spawnOne(sy, isDecoy){
 // Predicted arrival times (seconds from now) of all incoming real items,
 // used to space out new spawns so hits don't land simultaneously.
 function incomingArrivals(sp){
-  const baby = babyPos();
+  const target = babyHandPos();
   const out = [];
   for (const it of items){
     if (it.resolved || it.flying || it.decoy) continue;
-    const d = Math.hypot(it.x - baby.x, it.y - baby.y);
+    const d = Math.hypot(it.x - target.x, it.y - target.y);
     out.push((it.delay > 0 ? it.delay : 0) + d/sp);
   }
   return out;
@@ -163,8 +171,9 @@ function ricochet(it){
 
 // Resolve an item that reached the baby. Returns reason string if game over.
 function resolve(it){
+  const swatting = holding || swatHoldTimer > 0;
   if (it.type === 'powerup'){
-    if (holding){
+    if (swatting){
       it.flying = true;
       ricochet(it);
     } else {
@@ -173,7 +182,7 @@ function resolve(it){
       happyTimer = CONFIG.happyFaceTime;
     }
   } else if (it.type === 'banana'){
-    if (holding){
+    if (swatting){
       score -= CONFIG.bananaSwatPenalty;
       it.flying = true;
       it.peeled = true;
@@ -190,7 +199,7 @@ function resolve(it){
       }
     }
   } else { // broccoli
-    if (!holding){
+    if (!swatting){
       it.resolved = true;
       if (powerupTimer > 0){
         // powered up: broccoli is harmless
@@ -221,8 +230,11 @@ function update(dt){
   spawnTimer -= dt;
   if (spawnTimer <= 0){ spawn(); spawnTimer = currentSpawnInterval(); }
 
-  const baby = babyPos();
+  if (swatHoldTimer > 0) swatHoldTimer -= dt;
+
+  const target = babyHandPos();
   const sp = currentSpeed();
+  const swatting = holding || swatHoldTimer > 0;
   for (const it of items){
     if (it.resolved) continue;
 
@@ -237,15 +249,23 @@ function update(dt){
     // held back briefly to stagger its arrival — wait off-screen
     if (it.delay > 0){ it.delay -= dt; continue; }
 
+    if (powerupTimer > 0 && it.type === 'banana') {
+      const dx = target.x - it.x;
+      const dy = target.y - it.y;
+      const len = Math.hypot(dx, dy) || 1;
+      it.ux = dx / len;
+      it.uy = dy / len;
+    }
+
     // incoming item: keep moving along the fixed aim direction
-    const speed = sp + (holding ? CONFIG.swatNudge : 0);
+    const speed = sp + (swatting ? CONFIG.swatNudge : 0);
     it.vx = it.ux * speed;
     it.vy = it.uy * speed;
     it.x += it.vx * dt;
     it.y += it.vy * dt;
     if (it.type === 'powerup') it.rot = (it.rot || 0) + it.spin * dt;
-    // resolve when it reaches the baby
-    if (Math.hypot(it.x - baby.x, it.y - baby.y) <= CONFIG.resolveRadius){
+    // resolve when it reaches the baby's hands
+    if (Math.hypot(it.x - target.x, it.y - target.y) <= CONFIG.resolveRadius){
       const reason = resolve(it);
       if (reason){ gameOver(reason); return; }
     }
@@ -294,11 +314,12 @@ function update(dt){
     !it.resolved &&
     it.x > -120 && it.x < VW+120 && it.y > -120 && it.y < VH+120
   );
+  const swatting = holding || swatHoldTimer > 0;
   const modeLabel = powerupTimer > 0
     ? '★ ' + Math.ceil(powerupTimer) + 's'
     : bananaStreak > 0
       ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
-      : holding ? 'SWATTING' : 'CATCHING';
+      : swatting ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (happyTimer   > 0) happyTimer   -= dt;
   if (yuckTimer    > 0) yuckTimer    -= dt;
@@ -319,7 +340,8 @@ function render(){
   ART.background(ctx, VW, VH, elapsed);
 
   const baby = babyPos();
-  ART.catchZone(ctx, baby.x, baby.y, CONFIG.resolveRadius);
+  const hand = babyHandPos();
+  ART.catchZone(ctx, hand.x, hand.y, CONFIG.resolveRadius);
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){
@@ -342,11 +364,13 @@ function render(){
       ART.broccoli(ctx, it.x, it.y, it.r);
     }
   }
-  const face = happyTimer > 0 ? 'eating'
+  const swatting = holding || swatHoldTimer > 0;
+  const face = swatting ? 'swat'
+             : happyTimer > 0 ? 'eating'
              : yuckTimer  > 0 ? 'yuck'
-             : holding ? 'swat' : 'catch';
+             : 'catch';
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
-  ART.baby(ctx, baby.x, baby.y, holding, face, babyScale);
+  ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
   ctx.restore();
 }
 
@@ -406,7 +430,15 @@ function gameOver(reason){
 }
 
 /* ---- input: hold anywhere = swat ---- */
-function down(e){ if(state===State.PLAY){ holding=true; } e.preventDefault(); }
+function down(e){
+  if(state===State.PLAY){
+    holding=true;
+    swatHoldTimer = CONFIG.swatHoldDuration;
+    happyTimer = 0;
+    yuckTimer = 0;
+  }
+  e.preventDefault();
+}
 function up(e){ if(state===State.PLAY){ holding=false; } e.preventDefault(); }
 canvas.addEventListener('pointerdown', down, { passive: false });
 window.addEventListener('pointerup',     up,  { passive: false });

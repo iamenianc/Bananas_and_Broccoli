@@ -65,6 +65,7 @@ const CONFIG = {
   swatNudge:        0,      // optional extra speed when swatting (0 = off)
   happyFaceTime:    0.45,   // seconds the baby looks happy after catching a banana
   yuckFaceTime:     0.55,   // seconds the baby looks disgusted after eating broccoli
+  swatHoldDuration: 0.18,   // seconds the swat remains active for tapped timing tolerance
 
   // power-up: a rare pink banana — catching it doubles banana points, makes
   // broccoli harmless, triples item speed, and doubles the baby's size for
