@@ -153,7 +153,7 @@ function ricochet(it){
 function resolve(it){
   if (it.type === 'banana'){
     if (holding){
-      score -= CONFIG.bananaSwatPenalty;                   // rejected food: -3
+      score -= CONFIG.bananaSwatPenalty;                   // rejected food: -1
       // rejected banana: ends up half peeled and bounces away in the
       // opposite direction it came from.
       it.flying = true;
