@@ -190,7 +190,10 @@ function resolve(it){
       ricochet(it);
     } else {
       it.resolved = true;
-      powerupTimer = CONFIG.powerupDuration;
+      if (broccoliEaten > 0) {
+        broccoliEaten--;
+        updateBroccoliHud();
+      }
       happyTimer = CONFIG.happyFaceTime;
     }
   } else if (it.type === 'banana'){
