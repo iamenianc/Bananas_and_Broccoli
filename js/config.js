@@ -16,9 +16,9 @@ const CONFIG = {
   worldH:           720,
 
   // world — items now TRAVEL horizontally from the right edge toward the baby
-  baseSpeed:        300,    // px/sec along the aim line, at start
-  accelPerSec:      11,     // speed gained each second alive
-  maxSpeed:         1000,
+  baseSpeed:        450,    // px/sec along the aim line, at start (increased from 300)
+  accelPerSec:      22,     // speed gained each second alive (increased from 11)
+  maxSpeed:         1200,   // increased from 1000
   spawnEveryStart:  1.05,   // seconds between spawn BURSTS at start
   spawnEveryMin:    0.42,   // fastest spawn interval
   spawnRampPerSec:  0.012,  // how fast spawn interval tightens
