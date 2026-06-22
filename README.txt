@@ -6,10 +6,14 @@ The game is a PWA, so it needs to be served over a local web server
 PWA install/offline features won't work, and some browsers block them).
 
 FILES
-  index.html     the whole game
-  manifest.json  PWA manifest (icon, name, landscape lock)
-  sw.js          service worker (offline/install support)
-  README.txt     this file
+  index.html        page markup only
+  css/styles.css    all layout & visual styling
+  js/config.js      tunable gameplay numbers (rebalance here)
+  js/art.js         drawing functions (restyle here)
+  js/engine.js      spawning, physics, input, scoring, loop
+  manifest.json     PWA manifest (icon, name, landscape lock)
+  sw.js             service worker (offline/install support)
+  README.txt        this file
 
 QUICKEST WAY (Python — already on most Windows machines)
   1. Unzip this folder somewhere, e.g. C:\bananas

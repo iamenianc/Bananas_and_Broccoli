@@ -1,0 +1,58 @@
+/* =========================================================
+   Layout & look only. All gameplay numbers live in
+   js/config.js; all drawing lives in js/art.js. Restyle
+   here freely without touching game logic.
+   ========================================================= */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+  width:100%; height:100%; overflow:hidden;
+  background:#ffffff; color:#000;
+  font-family: ui-monospace, "Courier New", monospace;
+  touch-action:none; user-select:none; -webkit-user-select:none;
+}
+#game { position:fixed; inset:0; display:block; background:#fff; }
+
+/* HUD */
+#hud {
+  position:fixed; top:0; left:0; right:0;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 18px; font-size:20px; font-weight:bold;
+  pointer-events:none; z-index:5;
+}
+#score { letter-spacing:1px; }
+#broccoli { font-size:18px; letter-spacing:2px; display:flex; gap:3px; }
+#broccoli .b { display:inline-block; transition:opacity .2s, filter .2s; }
+#broccoli .b.eaten { opacity:1; filter:none; }
+#broccoli .b.left  { opacity:.28; filter:grayscale(1); }
+#broccoli.warn .b.eaten { animation:bpulse .7s ease-in-out infinite; }
+@keyframes bpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+#mode  { opacity:.55; font-size:14px; }
+
+/* Overlay screens (start / gameover / rotate) */
+.overlay {
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.96); text-align:center; padding:24px;
+}
+.overlay.hidden { display:none; }
+.overlay h1 { font-size:clamp(28px,7vw,52px); margin-bottom:6px; letter-spacing:1px; }
+.overlay p  { font-size:clamp(14px,3.2vw,18px); max-width:520px; line-height:1.5; margin-bottom:8px; opacity:.8; }
+.overlay .big { font-size:clamp(20px,5vw,34px); margin:14px 0; font-weight:bold; }
+.btn {
+  margin-top:18px; border:3px solid #000; background:#fff; color:#000;
+  font:inherit; font-size:20px; font-weight:bold; padding:14px 38px;
+  cursor:pointer; letter-spacing:1px;
+}
+.btn:active { background:#000; color:#fff; }
+
+/* Rotate prompt: only shows in portrait */
+#rotate { display:none; }
+@media (orientation:portrait) {
+  #rotate { display:flex; }
+  .playfield-overlay { display:none !important; }
+}
+.rotate-icon { font-size:64px; margin-bottom:16px; animation:rock 1.6s ease-in-out infinite; }
+@keyframes rock { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
+
+.hint { position:fixed; bottom:14px; left:0; right:0; text-align:center;
+        font-size:13px; opacity:.45; z-index:5; pointer-events:none; }

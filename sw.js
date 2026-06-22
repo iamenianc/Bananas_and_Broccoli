@@ -1,5 +1,12 @@
-const CACHE = 'bananas-v1';
-const ASSETS = ['index.html', 'manifest.json'];
+const CACHE = 'bananas-v2';
+const ASSETS = [
+  'index.html',
+  'manifest.json',
+  'css/styles.css',
+  'js/config.js',
+  'js/art.js',
+  'js/engine.js',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
