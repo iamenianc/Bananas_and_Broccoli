@@ -47,12 +47,16 @@ let happyTimer   = 0;    // >0 while baby shows the eating-banana face
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
 let powerupTimer = 0;    // >0 while double-score / no-broccoli-penalty buff is active
 let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
+let barrageTimer = 0;    // >0 while barrage is active
+let timeSinceLastBarrage = 50; // seconds since last barrage ended
 let lastT = 0;
 
 function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
   bananaStreak = 0;
+  barrageTimer = 0;
+  timeSinceLastBarrage = 50;
   hudScore.textContent = '0';
   updateBroccoliHud();
 }
@@ -83,18 +87,26 @@ function babyHandPos(){
 }
 
 function currentSpeed(){
-  const base = Math.min(CONFIG.maxSpeed,
+  let base = Math.min(CONFIG.maxSpeed,
     CONFIG.baseSpeed + CONFIG.accelPerSec*elapsed);
+  if (barrageTimer > 0) {
+    base *= CONFIG.barrageSpeedMult;
+  }
   return powerupTimer > 0 ? base * CONFIG.powerupSpeedMult : base;
 }
 function currentSpawnInterval(){
+  if (barrageTimer > 0) {
+    return CONFIG.barrageSpawnEvery;
+  }
   return Math.max(CONFIG.spawnEveryMin,
     CONFIG.spawnEveryStart - CONFIG.spawnRampPerSec*elapsed);
 }
 
 function spawnOne(sy, isDecoy){
   let type;
-  if (!isDecoy && Math.random() < CONFIG.powerupChance){
+  if (barrageTimer > 0) {
+    type = 'broccoli';
+  } else if (!isDecoy && Math.random() < CONFIG.powerupChance){
     type = 'powerup';
   } else {
     type = Math.random() < CONFIG.broccoliChance ? 'broccoli' : 'banana';
@@ -227,6 +239,21 @@ function resolve(it){
 
 function update(dt){
   elapsed += dt;
+  if (barrageTimer > 0) {
+    barrageTimer -= dt;
+    if (barrageTimer <= 0) {
+      timeSinceLastBarrage = 0;
+    }
+  } else {
+    timeSinceLastBarrage += dt;
+    if (timeSinceLastBarrage >= CONFIG.barrageMinCooldown) {
+      if (Math.random() < CONFIG.barrageChancePerSec * dt) {
+        barrageTimer = CONFIG.barrageDuration;
+        spawnTimer = 0; // Trigger an immediate burst
+      }
+    }
+  }
+
   spawnTimer -= dt;
   if (spawnTimer <= 0){ spawn(); spawnTimer = currentSpawnInterval(); }
 
@@ -314,11 +341,13 @@ function update(dt){
     !it.resolved &&
     it.x > -120 && it.x < VW+120 && it.y > -120 && it.y < VH+120
   );
-  const modeLabel = powerupTimer > 0
-    ? '★ ' + Math.ceil(powerupTimer) + 's'
-    : bananaStreak > 0
-      ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
-      : swatting ? 'SWATTING' : 'CATCHING';
+  const modeLabel = barrageTimer > 0
+    ? '⚠️ BARRAGE!'
+    : powerupTimer > 0
+      ? '★ ' + Math.ceil(powerupTimer) + 's'
+      : bananaStreak > 0
+        ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
+        : swatting ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (happyTimer   > 0) happyTimer   -= dt;
   if (yuckTimer    > 0) yuckTimer    -= dt;
