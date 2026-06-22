@@ -31,8 +31,12 @@
     pointer-events:none; z-index:5;
   }
   #score { letter-spacing:1px; }
-  #broccoli { font-size:18px; letter-spacing:1px; transition:color .2s; }
-  #broccoli.warn { color:#c0392b; }
+  #broccoli { font-size:18px; letter-spacing:2px; display:flex; gap:3px; }
+  #broccoli .b { display:inline-block; transition:opacity .2s, filter .2s; }
+  #broccoli .b.eaten { opacity:1; filter:none; }
+  #broccoli .b.left  { opacity:.28; filter:grayscale(1); }
+  #broccoli.warn .b.eaten { animation:bpulse .7s ease-in-out infinite; }
+  @keyframes bpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
   #mode  { opacity:.55; font-size:14px; }
 
   /* Overlay screens (start / gameover / rotate) */
@@ -71,7 +75,7 @@
 
   <div id="hud" class="playfield-overlay">
     <div id="score">0</div>
-    <div id="broccoli">🥦 0/6</div>
+    <div id="broccoli" aria-label="broccoli eaten"></div>
     <div id="mode">CATCHING</div>
   </div>
   <div class="hint playfield-overlay">hold = swat &nbsp;·&nbsp; release = catch</div>
@@ -81,7 +85,7 @@
     <h1>BANANAS &amp; BROCCOLI</h1>
     <p>You're a baby. Bananas and broccoli fly in from the right, straight at you.
        Hold your finger down to <b>swat broccoli away</b>; let go to <b>catch a banana</b>.
-       Swatting a banana costs 10 points. Eat 6 broccoli and it's over. It only gets faster.</p>
+       Swatting a banana costs 3 points. Eat 6 broccoli and it's over. It only gets faster.</p>
     <button id="startBtn" class="btn">START</button>
   </div>
 
@@ -143,12 +147,20 @@ const CONFIG = {
   // scoring
   pointsPerBanana:    1,
   penaltyPoints:      1,    // points lost for eating a broccoli
-  bananaSwatPenalty:  10,   // points lost for swatting a banana away (NOT a loss)
+  bananaSwatPenalty:  3,    // points lost for swatting a banana away (NOT a loss)
   broccoliEatenLimit: 6,    // eating this many broccoli total = game over
+
+  // staggering — try to avoid two real items reaching the baby at the
+  // same instant, which is unfair/unreadable. New incoming items get a
+  // small launch delay nudged until their predicted arrival is at least
+  // minArrivalGap away from every other incoming item's arrival.
+  minArrivalGap:    0.22,   // seconds of clearance we aim for between hits
+  arrivalDelayStep: 0.10,   // how much delay we add per nudge
+  maxArrivalDelay:  0.9,    // never hold an item back longer than this
 
   // RULES (single source of truth, mirrored in resolve()):
   //  - Banana + released (catching) => +point
-  //  - Banana + holding  (swatting) => -10 points
+  //  - Banana + holding  (rejecting) => -3 points, banana flies off half-peeled
   //  - Broccoli + holding (swatting) => safe, swatted away (good)
   //  - Broccoli + released (eaten)   => -1 point, and counts toward the
   //                                     6-broccoli lose condition
@@ -161,8 +173,8 @@ const CONFIG = {
   bananaFill:       '#ffd23f',
   broccoliFill:     '#5fae46',
 
-  // swatted broccoli ricochet
-  swatBackSpeed:    520,    // px/sec launch speed of a swatted broccoli
+  // swatted item ricochet (broccoli swatted away, or banana rejected)
+  swatBackSpeed:    520,    // px/sec launch speed of a swatted item
   swatSpinMax:      12,     // max rad/sec spin while flying off
 };
 
@@ -196,6 +208,31 @@ const ART = {
       c.beginPath();
       c.moveTo(x - r*0.9, y - r*0.2);
       c.lineTo(x - r*1.05, y - r*0.5);
+      c.stroke();
+    });
+  },
+
+  // A banana that's been swatted/rejected: same body, but with the peel
+  // split open at the tip into a couple of drooping flaps so it reads as
+  // "half peeled" as it tumbles away.
+  bananaPeeled(ctx, x, y, r){
+    ART.wobble(ctx, c=>{
+      // body (slightly paler fruit showing through)
+      c.beginPath();
+      c.moveTo(x - r*0.9, y - r*0.2);
+      c.quadraticCurveTo(x - r*0.2, y + r*1.1, x + r*0.95, y - r*0.1);
+      c.quadraticCurveTo(x + r*0.2, y + r*0.45, x - r*0.9, y - r*0.2);
+      c.closePath();
+      c.fillStyle = '#fff3c4'; c.fill();   // pale, peeled fruit
+      c.stroke();
+      // peel flaps opening from the left tip, drooping down
+      c.beginPath();
+      c.moveTo(x - r*0.9, y - r*0.2);
+      c.quadraticCurveTo(x - r*1.5, y + r*0.2, x - r*1.25, y + r*0.85);
+      c.stroke();
+      c.beginPath();
+      c.moveTo(x - r*0.9, y - r*0.2);
+      c.quadraticCurveTo(x - r*1.7, y - r*0.1, x - r*1.6, y + r*0.55);
       c.stroke();
     });
   },
@@ -312,8 +349,20 @@ function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; broccoliEaten = 0; happyTimer = 0;
   hudScore.textContent = '0';
-  hudBroccoli.textContent = '🥦 0/' + CONFIG.broccoliEatenLimit;
-  hudBroccoli.classList.remove('warn');
+  updateBroccoliHud();
+}
+
+// Render the broccoli "lives" as a row of broccoli icons — one per
+// allowed broccoli — filling in as they're eaten, instead of a N/6 tally.
+function updateBroccoliHud(){
+  let html = '';
+  for (let i=0; i<CONFIG.broccoliEatenLimit; i++){
+    const cls = i < broccoliEaten ? 'b eaten' : 'b left';
+    html += '<span class="' + cls + '">🥦</span>';
+  }
+  hudBroccoli.innerHTML = html;
+  hudBroccoli.classList.toggle('warn',
+    broccoliEaten >= CONFIG.broccoliEatenLimit - 2);
 }
 
 function babyPos(){
@@ -342,11 +391,38 @@ function spawnOne(sy, isDecoy){
   const dx = baby.x - sx, dy = aimY - sy;
   const len = Math.hypot(dx, dy) || 1;
   const sp = currentSpeed();
+  // Stagger arrivals: nudge this item's launch delay until its predicted
+  // arrival time is clear of every other incoming real item's arrival,
+  // so two things rarely reach the baby at the exact same instant.
+  let delay = 0;
+  if (!isDecoy){
+    const others = incomingArrivals(sp);
+    let arrival = len/sp;
+    let guard = 0;
+    while (delay < CONFIG.maxArrivalDelay && guard++ < 32 &&
+           others.some(a => Math.abs(a - arrival) < CONFIG.minArrivalGap)){
+      delay += CONFIG.arrivalDelayStep;
+      arrival = delay + len/sp;
+    }
+  }
   items.push({
-    x:sx, y:sy, r, type, resolved:false, decoy:isDecoy,
+    x:sx, y:sy, r, type, resolved:false, decoy:isDecoy, delay,
     ux:dx/len, uy:dy/len,
     vx:dx/len*sp, vy:dy/len*sp
   });
+}
+
+// Predicted arrival times (seconds from now) of all incoming real items,
+// used to space out new spawns so hits don't land simultaneously.
+function incomingArrivals(sp){
+  const baby = babyPos();
+  const out = [];
+  for (const it of items){
+    if (it.resolved || it.flying || it.decoy) continue;
+    const d = Math.hypot(it.x - baby.x, it.y - baby.y);
+    out.push((it.delay > 0 ? it.delay : 0) + d/sp);
+  }
+  return out;
 }
 
 function spawn(){
@@ -361,13 +437,29 @@ function spawn(){
   }
 }
 
+// Launch a swatted/rejected item back the way it came (opposite of its
+// incoming heading) with a little random spread and spin.
+function ricochet(it){
+  const back = Math.atan2(-it.uy, -it.ux);          // opposite direction
+  const ang = back + (Math.random()*2-1) * (40*Math.PI/180);
+  it.vx = Math.cos(ang) * CONFIG.swatBackSpeed;
+  it.vy = Math.sin(ang) * CONFIG.swatBackSpeed;
+  it.spin = (Math.random()*2-1) * CONFIG.swatSpinMax;
+  it.rot = 0;
+}
+
 // Resolve an item that reached the baby. Returns reason string if game over.
 function resolve(it){
   if (it.type === 'banana'){
-    it.resolved = true;
     if (holding){
-      score -= CONFIG.bananaSwatPenalty;                   // swatted food away: -10
+      score -= CONFIG.bananaSwatPenalty;                   // rejected food: -3
+      // rejected banana: ends up half peeled and bounces away in the
+      // opposite direction it came from.
+      it.flying = true;
+      it.peeled = true;
+      ricochet(it);
     } else {
+      it.resolved = true;
       score += CONFIG.pointsPerBanana;                     // caught: +1
       happyTimer = CONFIG.happyFaceTime;                   // baby looks delighted
     }
@@ -376,8 +468,7 @@ function resolve(it){
       it.resolved = true;
       score -= CONFIG.penaltyPoints;                       // eaten: -1
       broccoliEaten++;
-      hudBroccoli.textContent = '🥦 ' + broccoliEaten + '/' + CONFIG.broccoliEatenLimit;
-      hudBroccoli.classList.toggle('warn', broccoliEaten >= CONFIG.broccoliEatenLimit - 2);
+      updateBroccoliHud();
       if (broccoliEaten >= CONFIG.broccoliEatenLimit){
         if (score < 0) score = 0;
         hudScore.textContent = score;
@@ -386,11 +477,7 @@ function resolve(it){
     } else {
       // swatted! launch it back to the right on a random trajectory
       it.flying = true;
-      const ang = (-50 + Math.random()*100) * Math.PI/180;
-      it.vx =  Math.cos(ang) * CONFIG.swatBackSpeed;
-      it.vy =  Math.sin(ang) * CONFIG.swatBackSpeed;
-      it.spin = (Math.random()*2-1) * CONFIG.swatSpinMax;
-      it.rot = 0;
+      ricochet(it);
     }
   }
   if (score < 0) score = 0;
@@ -415,6 +502,9 @@ function update(dt){
       it.rot += it.spin * dt;
       continue;
     }
+
+    // held back briefly to stagger its arrival — wait off-screen
+    if (it.delay > 0){ it.delay -= dt; continue; }
 
     // incoming item: keep moving along the fixed aim direction
     const speed = sp + (holding ? CONFIG.swatNudge : 0);
@@ -444,11 +534,12 @@ function render(){
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){
-      // swatted broccoli tumbling away
+      // swatted item tumbling away
       ctx.save();
       ctx.translate(it.x, it.y);
       ctx.rotate(it.rot || 0);
-      ART.broccoli(ctx, 0, 0, it.r);
+      if (it.peeled)      ART.bananaPeeled(ctx, 0, 0, it.r);
+      else                ART.broccoli(ctx, 0, 0, it.r);
       ctx.restore();
     } else if (it.type==='banana'){
       ART.banana(ctx, it.x, it.y, it.r);
