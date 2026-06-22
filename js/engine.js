@@ -68,11 +68,11 @@ function updateBroccoliHud(){
   for (let i=0; i<CONFIG.broccoliEatenLimit; i++){
     const alive = i < CONFIG.broccoliEatenLimit - broccoliEaten;
     const cls = alive ? 'b left' : 'b lost';
-    html += '<span class="' + cls + '">' + (alive ? '❤️' : '🖤') + '</span>';
+    html += '<span class="' + cls + '"></span>';
   }
   hudBroccoli.innerHTML = html;
   hudBroccoli.classList.toggle('warn',
-    broccoliEaten >= CONFIG.broccoliEatenLimit - 2);
+    broccoliEaten >= CONFIG.broccoliEatenLimit - 3);
 }
 
 function babyPos(){
