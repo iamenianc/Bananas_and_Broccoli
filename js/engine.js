@@ -229,6 +229,7 @@ function resolve(it){
       }
     } else {
       it.flying = true;
+      it.touchedBaby = true;
       ricochet(it);
     }
   }
@@ -320,7 +321,7 @@ function update(dt){
   }
   // flying broccoli hitting an incoming broccoli: 50% chance to knock it offscreen
   for (const flt of items){
-    if (!flt.flying || flt.type !== 'broccoli') continue;
+    if (!flt.flying || flt.type !== 'broccoli' || !flt.touchedBaby) continue;
     for (const inc of items){
       if (inc.flying || inc.resolved || inc.type !== 'broccoli') continue;
       if (Math.hypot(flt.x - inc.x, flt.y - inc.y) <= flt.r + inc.r){
