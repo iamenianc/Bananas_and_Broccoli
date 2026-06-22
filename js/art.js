@@ -10,16 +10,15 @@
 // immediately; until ready, ART.sprite() simply skips drawing that frame.
 function loadImg(src){ const i = new Image(); i.src = src; return i; }
 const IMG = {
-  banana:       loadImg('assets/banana.png'),
-  bananaPeeled: loadImg('assets/banana_peeled.png'),
-  broccoli:     loadImg('assets/broccoli.png'),
+  banana:       loadImg('assets/banana.webp'),
+  bananaPeeled: loadImg('assets/banana_peeled.webp'),
+  broccoli:     loadImg('assets/broccoli.webp'),
   babyCatch:    loadImg('assets/baby_catch.svg'),
   babySwat:     loadImg('assets/baby_swat.svg'),
   babyEat:      loadImg('assets/baby_eat.svg'),
   babyYuck:     loadImg('assets/baby_yuck.svg'),
 };
 
-/* ---- parallax background helpers ---- */
 function _mtY(lx, baseY, amp, seed){
   const v =
     Math.sin(lx * 0.0028 + seed)        * 0.42 +
