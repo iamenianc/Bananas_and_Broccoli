@@ -325,13 +325,17 @@ function update(dt){
     for (const inc of items){
       if (inc.flying || inc.resolved || inc.type !== 'broccoli') continue;
       if (Math.hypot(flt.x - inc.x, flt.y - inc.y) <= flt.r + inc.r){
-        if (Math.random() < 0.5){
-          const ang = Math.atan2(flt.vy, flt.vx) + (Math.random() - 0.5) * 1.0;
-          inc.flying = true;
-          inc.vx = Math.cos(ang) * CONFIG.swatBackSpeed;
-          inc.vy = Math.sin(ang) * CONFIG.swatBackSpeed;
-          inc.spin = (Math.random() * 2 - 1) * CONFIG.swatSpinMax;
-          inc.rot = 0;
+        inc.checkedBy = inc.checkedBy || [];
+        if (!inc.checkedBy.includes(flt)) {
+          inc.checkedBy.push(flt);
+          if (Math.random() < 0.5){
+            const ang = Math.atan2(flt.vy, flt.vx) + (Math.random() - 0.5) * 1.0;
+            inc.flying = true;
+            inc.vx = Math.cos(ang) * CONFIG.swatBackSpeed;
+            inc.vy = Math.sin(ang) * CONFIG.swatBackSpeed;
+            inc.spin = (Math.random() * 2 - 1) * CONFIG.swatSpinMax;
+            inc.rot = 0;
+          }
         }
         break;
       }
