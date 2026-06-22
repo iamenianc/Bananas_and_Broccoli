@@ -89,6 +89,23 @@ const ART = {
     ctx.restore();
   },
 
+  // Pink banana power-up — the normal banana sprite with a hot-pink tint overlay.
+  powerup(ctx, x, y, r){
+    if (!IMG.banana.complete || !IMG.banana.naturalWidth) return;
+    const size = r * CONFIG.foodSpriteScale;
+    const k = size / Math.max(IMG.banana.naturalWidth, IMG.banana.naturalHeight);
+    const w = IMG.banana.naturalWidth * k, h = IMG.banana.naturalHeight * k;
+    ctx.save();
+    ctx.translate(x, y);
+    // draw banana normally, then overlay pink using source-atop so the tint
+    // follows the sprite's shape (transparent pixels stay transparent).
+    ctx.drawImage(IMG.banana, -w/2, -h/2, w, h);
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = 'rgba(255, 100, 180, 0.55)';
+    ctx.fillRect(-w/2, -h/2, w, h);
+    ctx.restore();
+  },
+
   catchZone(ctx, x, y, r){
     ART.wobble(ctx, c=>{
       c.setLineDash([10,12]);

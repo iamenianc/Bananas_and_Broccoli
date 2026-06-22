@@ -43,13 +43,14 @@ let elapsed = 0;         // seconds alive
 let spawnTimer = 0;
 let holding = false;     // finger down = swatting
 let broccoliEaten = 0;   // counts toward the lose condition
-let happyTimer = 0;      // >0 while baby shows the eating-banana face
-let yuckTimer  = 0;      // >0 while baby shows the disgusted-broccoli face
+let happyTimer   = 0;    // >0 while baby shows the eating-banana face
+let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
+let powerupTimer = 0;    // >0 while double-score / no-broccoli-penalty buff is active
 let lastT = 0;
 
 function reset(){
   items = []; spoons = []; score = 0; elapsed = 0; spawnTimer = 0;
-  holding = false; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0;
+  holding = false; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
 }
@@ -81,7 +82,12 @@ function currentSpawnInterval(){
 }
 
 function spawnOne(sy, isDecoy){
-  const type = Math.random() < CONFIG.broccoliChance ? 'broccoli' : 'banana';
+  let type;
+  if (!isDecoy && Math.random() < CONFIG.powerupChance){
+    type = 'powerup';
+  } else {
+    type = Math.random() < CONFIG.broccoliChance ? 'broccoli' : 'banana';
+  }
   const r = CONFIG.itemRadius;
   const baby = babyPos();
   const sx = VW + r;
@@ -107,11 +113,13 @@ function spawnOne(sy, isDecoy){
       arrival = delay + len/sp;
     }
   }
-  items.push({
+  const item = {
     x:sx, y:sy, r, type, resolved:false, decoy:isDecoy, delay,
     ux:dx/len, uy:dy/len,
     vx:dx/len*sp, vy:dy/len*sp
-  });
+  };
+  if (type === 'powerup'){ item.rot = 0; item.spin = CONFIG.powerupSpinRate; }
+  items.push(item);
 }
 
 // Predicted arrival times (seconds from now) of all incoming real items,
@@ -152,33 +160,43 @@ function ricochet(it){
 
 // Resolve an item that reached the baby. Returns reason string if game over.
 function resolve(it){
-  if (it.type === 'banana'){
+  if (it.type === 'powerup'){
     if (holding){
-      score -= CONFIG.bananaSwatPenalty;                   // rejected food: -1
-      // rejected banana: ends up half peeled and bounces away in the
-      // opposite direction it came from.
+      it.flying = true;
+      ricochet(it);
+    } else {
+      it.resolved = true;
+      powerupTimer = CONFIG.powerupDuration;
+      happyTimer = CONFIG.happyFaceTime;
+    }
+  } else if (it.type === 'banana'){
+    if (holding){
+      score -= CONFIG.bananaSwatPenalty;
       it.flying = true;
       it.peeled = true;
       ricochet(it);
     } else {
       it.resolved = true;
-      score += CONFIG.pointsPerBanana;                     // caught: +1
-      happyTimer = CONFIG.happyFaceTime;                   // baby looks delighted
+      score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
+      happyTimer = CONFIG.happyFaceTime;
     }
   } else { // broccoli
     if (!holding){
       it.resolved = true;
-      score -= CONFIG.penaltyPoints;                       // eaten: -1
-      broccoliEaten++;
-      yuckTimer = CONFIG.yuckFaceTime;                     // baby looks disgusted
-      updateBroccoliHud();
-      if (broccoliEaten >= CONFIG.broccoliEatenLimit){
-        if (score < 0) score = 0;
-        hudScore.textContent = score;
-        return 'You ate ' + CONFIG.broccoliEatenLimit + ' broccoli.';
+      if (powerupTimer > 0){
+        // powered up: broccoli is harmless
+      } else {
+        score -= CONFIG.penaltyPoints;
+        broccoliEaten++;
+        yuckTimer = CONFIG.yuckFaceTime;
+        updateBroccoliHud();
+        if (broccoliEaten >= CONFIG.broccoliEatenLimit){
+          if (score < 0) score = 0;
+          hudScore.textContent = score;
+          return 'You ate ' + CONFIG.broccoliEatenLimit + ' broccoli.';
+        }
       }
     } else {
-      // swatted! launch it back to the right on a random trajectory
       it.flying = true;
       ricochet(it);
     }
@@ -219,6 +237,7 @@ function update(dt){
     it.vy = it.uy * speed;
     it.x += it.vx * dt;
     it.y += it.vy * dt;
+    if (it.type === 'powerup') it.rot = (it.rot || 0) + it.spin * dt;
     // resolve when it reaches the baby
     if (Math.hypot(it.x - baby.x, it.y - baby.y) <= CONFIG.resolveRadius){
       const reason = resolve(it);
@@ -272,10 +291,13 @@ function update(dt){
   // advance & retire spoon flick animations
   for (const sp of spoons) sp.age += dt;
   spoons = spoons.filter(sp => sp.age < CONFIG.spoonDur);
-  const modeLabel = holding ? 'SWATTING' : 'CATCHING';
+  const modeLabel = powerupTimer > 0
+    ? '★ ' + Math.ceil(powerupTimer) + 's'
+    : holding ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
-  if (happyTimer > 0) happyTimer -= dt;
-  if (yuckTimer  > 0) yuckTimer  -= dt;
+  if (happyTimer   > 0) happyTimer   -= dt;
+  if (yuckTimer    > 0) yuckTimer    -= dt;
+  if (powerupTimer > 0) powerupTimer -= dt;
 }
 
 function render(){
@@ -309,12 +331,18 @@ function render(){
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){
-      // swatted item tumbling away
       ctx.save();
       ctx.translate(it.x, it.y);
       ctx.rotate(it.rot || 0);
-      if (it.peeled)      ART.bananaPeeled(ctx, 0, 0, it.r);
-      else                ART.broccoli(ctx, 0, 0, it.r);
+      if (it.peeled)             ART.bananaPeeled(ctx, 0, 0, it.r);
+      else if (it.type==='powerup') ART.powerup(ctx, 0, 0, it.r);
+      else                       ART.broccoli(ctx, 0, 0, it.r);
+      ctx.restore();
+    } else if (it.type==='powerup'){
+      ctx.save();
+      ctx.translate(it.x, it.y);
+      ctx.rotate(it.rot || 0);
+      ART.powerup(ctx, 0, 0, it.r);
       ctx.restore();
     } else if (it.type==='banana'){
       ART.banana(ctx, it.x, it.y, it.r);
