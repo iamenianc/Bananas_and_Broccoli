@@ -17,6 +17,7 @@ const IMG = {
   babyCatch:    loadImg('assets/baby_catch.svg'),
   babySwat:     loadImg('assets/baby_swat.svg'),
   babyEat:      loadImg('assets/baby_eat.svg'),
+  babyYuck:     loadImg('assets/baby_yuck.svg'),
 };
 
 // Pixel-art baby sprite metrics (must match tools/gen_baby.py grid): the
@@ -60,11 +61,12 @@ const ART = {
   },
 
   // The baby, drawn from 16-bit pixel-art SVG sprites (black hair, brown
-  // eyes). face: 'catch' | 'swat' | 'eating'. The head is anchored over
-  // (x,y); hands reach toward the RIGHT (incoming items).
+  // eyes). face: 'catch' | 'swat' | 'eating' | 'yuck'. The head is anchored
+  // over (x,y); hands reach toward the RIGHT (incoming items).
   baby(ctx, x, y, swatting, face){
     face = face || (swatting ? 'swat' : 'catch');
     const img = face === 'eating' ? IMG.babyEat
+              : face === 'yuck'   ? IMG.babyYuck
               : (face === 'swat' || swatting) ? IMG.babySwat
               : IMG.babyCatch;
     if (!img.complete || !img.naturalWidth) return;

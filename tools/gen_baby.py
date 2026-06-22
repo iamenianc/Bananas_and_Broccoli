@@ -97,6 +97,9 @@ def eye(g, x, y, kind):
     elif kind == 'happy':              # closed smiling eye (∪) for eating
         put(g, x, y, 'o'); put(g, x + 3, y, 'o')
         put(g, x + 1, y + 1, 'o'); put(g, x + 2, y + 1, 'o')
+    elif kind == 'yuck':               # inverted arc (∩) — scrunched disgust
+        put(g, x + 1, y,     'o'); put(g, x + 2, y,     'o')
+        put(g, x,     y + 1, 'o'); put(g, x + 3, y + 1, 'o')
 
 
 def cheeks(g, y):
@@ -118,6 +121,11 @@ def mouth(g, kind):
             for i, ch in enumerate(row):
                 if ch != '.':
                     put(g, cx - 2 + i, 13 + j, ch)
+    elif kind == 'tongue':             # grimace + tongue poking out
+        put(g, cx - 2, 14, 'o'); put(g, cx + 1, 14, 'o')  # corners
+        put(g, cx - 1, 14, 't'); put(g, cx,     14, 't')   # tongue top
+        put(g, cx - 1, 15, 't'); put(g, cx,     15, 't')   # tongue mid
+        put(g, cx,     16, 't')                             # tongue tip
 
 
 def hands(g, kind):
@@ -152,9 +160,10 @@ def build(eye_kind, mouth_kind, hands_kind, blush=True):
 
 
 SPRITES = {
-    'catch': build('open',  'small', None),    # no hands until blocking
-    'swat':  build('angry', 'flat',  'fist', blush=False),
-    'eat':   build('happy', 'open',  None),    # no hands until blocking
+    'catch': build('open',  'small',  None),
+    'swat':  build('angry', 'flat',   'fist', blush=False),
+    'eat':   build('happy', 'open',   None),
+    'yuck':  build('yuck',  'tongue', None,   blush=False),
 }
 
 

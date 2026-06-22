@@ -44,11 +44,12 @@ let spawnTimer = 0;
 let holding = false;     // finger down = swatting
 let broccoliEaten = 0;   // counts toward the lose condition
 let happyTimer = 0;      // >0 while baby shows the eating-banana face
+let yuckTimer  = 0;      // >0 while baby shows the disgusted-broccoli face
 let lastT = 0;
 
 function reset(){
   items = []; spoons = []; score = 0; elapsed = 0; spawnTimer = 0;
-  holding = false; broccoliEaten = 0; happyTimer = 0;
+  holding = false; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
 }
@@ -169,6 +170,7 @@ function resolve(it){
       it.resolved = true;
       score -= CONFIG.penaltyPoints;                       // eaten: -1
       broccoliEaten++;
+      yuckTimer = CONFIG.yuckFaceTime;                     // baby looks disgusted
       updateBroccoliHud();
       if (broccoliEaten >= CONFIG.broccoliEatenLimit){
         if (score < 0) score = 0;
@@ -223,6 +225,27 @@ function update(dt){
       if (reason){ gameOver(reason); return; }
     }
   }
+  // flying banana hitting an incoming broccoli: both tumble off-screen together
+  for (const flt of items){
+    if (!flt.flying || flt.type !== 'banana' || flt.hitBroccoli) continue;
+    for (const inc of items){
+      if (inc.flying || inc.resolved || inc.type !== 'broccoli') continue;
+      if (Math.hypot(flt.x - inc.x, flt.y - inc.y) <= flt.r + inc.r){
+        flt.hitBroccoli = true;
+        const downAng = Math.PI * 0.5 + (Math.random() - 0.5) * 0.5;
+        const spd = Math.hypot(flt.vx, flt.vy) * 0.7 + 250;
+        flt.vx = Math.cos(downAng) * spd;
+        flt.vy = Math.sin(downAng) * spd;
+        flt.spin = (Math.random() * 2 - 1) * CONFIG.swatSpinMax;
+        inc.flying = true;
+        inc.vx = flt.vx + (Math.random() - 0.5) * 60;
+        inc.vy = flt.vy + (Math.random() - 0.5) * 60;
+        inc.spin = (Math.random() * 2 - 1) * CONFIG.swatSpinMax;
+        inc.rot = 0;
+        break;
+      }
+    }
+  }
   // cull resolved items, and anything fully off-screen (any edge)
   items = items.filter(it =>
     !it.resolved &&
@@ -233,6 +256,7 @@ function update(dt){
   spoons = spoons.filter(sp => sp.age < CONFIG.spoonDur);
   hudMode.textContent = holding ? 'SWATTING' : 'CATCHING';
   if (happyTimer > 0) happyTimer -= dt;
+  if (yuckTimer  > 0) yuckTimer  -= dt;
 }
 
 function render(){
@@ -279,7 +303,9 @@ function render(){
       ART.broccoli(ctx, it.x, it.y, it.r);
     }
   }
-  const face = happyTimer > 0 ? 'eating' : (holding ? 'swat' : 'catch');
+  const face = happyTimer > 0 ? 'eating'
+             : yuckTimer  > 0 ? 'yuck'
+             : holding ? 'swat' : 'catch';
   ART.baby(ctx, baby.x, baby.y, holding, face);
   ctx.restore();
 }
