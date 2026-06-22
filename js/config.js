@@ -19,8 +19,8 @@ const CONFIG = {
   baseSpeed:        450,    // px/sec along the aim line, at start (increased from 300)
   accelPerSec:      22,     // speed gained each second alive (increased from 11)
   maxSpeed:         1200,   // increased from 1000
-  spawnEveryStart:  1.05,   // seconds between spawn BURSTS at start
-  spawnEveryMin:    0.42,   // fastest spawn interval
+  spawnEveryStart:  0.70,   // seconds between spawn BURSTS at start (decreased from 1.05)
+  spawnEveryMin:    0.28,   // fastest spawn interval (decreased from 0.42)
   spawnRampPerSec:  0.012,  // how fast spawn interval tightens
   broccoliChance:   0.444,  // fraction of spawns that are broccoli
                             // (=> 25% more bananas than broccoli: 0.556 vs 0.444)
@@ -80,7 +80,7 @@ const CONFIG = {
   // barrage: a terrifying barrage of broccoli only that is fast and furious.
   barrageMinCooldown: 50,   // seconds minimum between barrages
   barrageDuration:    6,    // seconds the barrage lasts
-  barrageSpawnEvery:  0.18, // spawn interval during barrage
+  barrageSpawnEvery:  0.12, // spawn interval during barrage (decreased from 0.18)
   barrageSpeedMult:   1.7,  // speed multiplier for barrage items
   barrageChancePerSec: 0.08, // chance per second to trigger barrage after cooldown
 
