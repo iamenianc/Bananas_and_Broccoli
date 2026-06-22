@@ -1,4 +1,4 @@
-const CACHE = 'bananas-v13';
+const CACHE = 'bananas-v14';
 const ASSETS = [
   'index.html',
   'manifest.json',

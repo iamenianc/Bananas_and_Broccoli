@@ -45,11 +45,13 @@ let broccoliEaten = 0;   // counts toward the lose condition
 let happyTimer   = 0;    // >0 while baby shows the eating-banana face
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
 let powerupTimer = 0;    // >0 while double-score / no-broccoli-penalty buff is active
+let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
 let lastT = 0;
 
 function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
+  bananaStreak = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
 }
@@ -174,11 +176,17 @@ function resolve(it){
       score -= CONFIG.bananaSwatPenalty;
       it.flying = true;
       it.peeled = true;
+      bananaStreak = 0;                 // rejecting a banana breaks the streak
       ricochet(it);
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
       happyTimer = CONFIG.happyFaceTime;
+      // build toward the streak reward (only while not already powered up)
+      if (powerupTimer <= 0 && ++bananaStreak >= CONFIG.streakForPowerup){
+        powerupTimer = CONFIG.powerupDuration;
+        bananaStreak = 0;
+      }
     }
   } else { // broccoli
     if (!holding){
@@ -188,6 +196,7 @@ function resolve(it){
       } else {
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
+        bananaStreak = 0;               // eating broccoli breaks the streak
         yuckTimer = CONFIG.yuckFaceTime;
         updateBroccoliHud();
         if (broccoliEaten >= CONFIG.broccoliEatenLimit){
@@ -286,7 +295,9 @@ function update(dt){
   );
   const modeLabel = powerupTimer > 0
     ? '★ ' + Math.ceil(powerupTimer) + 's'
-    : holding ? 'SWATTING' : 'CATCHING';
+    : bananaStreak > 0
+      ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
+      : holding ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (happyTimer   > 0) happyTimer   -= dt;
   if (yuckTimer    > 0) yuckTimer    -= dt;

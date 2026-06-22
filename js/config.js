@@ -74,6 +74,7 @@ const CONFIG = {
   powerupSpinRate:  3,      // rad/sec the pink banana spins while incoming
   powerupSpeedMult: 3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active
+  streakForPowerup: 10,     // consecutive bananas caught that triggers the buff
 
   // sprite sizing — food/spoon are drawn from PNG illustrations in assets/.
   // foodSpriteScale: longest side of a food sprite = itemRadius * this.
