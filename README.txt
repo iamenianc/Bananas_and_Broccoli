@@ -12,6 +12,8 @@ FILES
   js/art.js         drawing functions (restyle here)
   js/engine.js      spawning, physics, input, scoring, loop
   assets/*.png      food & spoon illustrations drawn by js/art.js
+  assets/baby_*.svg 16-bit pixel-art baby (catch/swat/eat expressions)
+  tools/gen_baby.py regenerates the baby SVGs from ASCII pixel grids
   manifest.json     PWA manifest (icon, name, landscape lock)
   sw.js             service worker (offline/install support)
   README.txt        this file

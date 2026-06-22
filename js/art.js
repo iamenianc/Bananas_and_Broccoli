@@ -14,7 +14,15 @@ const IMG = {
   bananaPeeled: loadImg('assets/banana_peeled.png'),
   broccoli:     loadImg('assets/broccoli.png'),
   spoon:        loadImg('assets/spoon.png'),
+  babyCatch:    loadImg('assets/baby_catch.svg'),
+  babySwat:     loadImg('assets/baby_swat.svg'),
+  babyEat:      loadImg('assets/baby_eat.svg'),
 };
+
+// Pixel-art baby sprite metrics (must match tools/gen_baby.py grid): the
+// head center sits at (cx,cy) in the 24x20 grid, so we can anchor the head
+// over the baby's logical position while the hands extend to the right.
+const BABY_GRID = { w:24, h:20, cx:8.5, cy:9 };
 
 const ART = {
   stroke: 3,
@@ -51,54 +59,20 @@ const ART = {
     ART.sprite(ctx, IMG.broccoli, x, y, r * CONFIG.foodSpriteScale);
   },
 
-  // The baby. face: 'catch' | 'swat' | 'eating'
+  // The baby, drawn from 16-bit pixel-art SVG sprites (black hair, brown
+  // eyes). face: 'catch' | 'swat' | 'eating'. The head is anchored over
+  // (x,y); hands reach toward the RIGHT (incoming items).
   baby(ctx, x, y, swatting, face){
     face = face || (swatting ? 'swat' : 'catch');
-    ART.wobble(ctx, c=>{
-      const r = 40;
-      // head
-      c.beginPath(); c.arc(x, y, r, 0, Math.PI*2); c.stroke();
-      // eyes — happy squint when eating, dots otherwise
-      if (face === 'eating'){
-        c.beginPath(); c.arc(x-13, y-4, 7, Math.PI, 0, true); c.stroke();   // ^ ^
-        c.beginPath(); c.arc(x+13, y-4, 7, Math.PI, 0, true); c.stroke();
-        // happy cheeks
-        c.beginPath(); c.arc(x-22, y+8, 4, 0, Math.PI*2); c.stroke();
-        c.beginPath(); c.arc(x+22, y+8, 4, 0, Math.PI*2); c.stroke();
-      } else {
-        c.fillStyle='#000';
-        c.beginPath(); c.arc(x-13, y-6, 2.5, 0, Math.PI*2); c.fill();
-        c.beginPath(); c.arc(x+13, y-6, 2.5, 0, Math.PI*2); c.fill();
-      }
-      // mouth
-      c.beginPath();
-      if (face === 'eating'){
-        // big happy open mouth (filled), like a delighted munch
-        c.arc(x, y+10, 13, 0, Math.PI);
-        c.fillStyle = '#000'; c.fill();
-      } else if (face === 'swat'){
-        c.arc(x, y+12, 9, Math.PI, 0);                     // tight, concentrating
-        c.stroke();
-      } else {
-        c.arc(x, y+8, 11, 0, Math.PI);                     // open, ready
-        c.stroke();
-      }
-      // curl of hair
-      c.beginPath(); c.arc(x, y-r, 6, Math.PI*0.2, Math.PI*0.9); c.stroke();
-      // hands reach toward the RIGHT (incoming items)
-      const hx = x + r + 14;
-      if (swatting){
-        // raised fists, ready to swat
-        c.beginPath(); c.moveTo(hx-18, y-22); c.lineTo(hx, y-30); c.stroke();
-        c.beginPath(); c.moveTo(hx-18, y+22); c.lineTo(hx, y+30); c.stroke();
-        c.beginPath(); c.arc(hx, y-30, 7, 0, Math.PI*2); c.stroke();
-        c.beginPath(); c.arc(hx, y+30, 7, 0, Math.PI*2); c.stroke();
-      } else {
-        // open cupped hands, ready to catch
-        c.beginPath(); c.arc(hx-2, y-18, 9, -Math.PI*0.5, Math.PI*0.5); c.stroke();
-        c.beginPath(); c.arc(hx-2, y+18, 9, -Math.PI*0.5, Math.PI*0.5); c.stroke();
-      }
-    });
+    const img = face === 'eating' ? IMG.babyEat
+              : (face === 'swat' || swatting) ? IMG.babySwat
+              : IMG.babyCatch;
+    if (!img.complete || !img.naturalWidth) return;
+    const g = BABY_GRID, s = CONFIG.babyPixel;       // canvas px per sprite px
+    const prev = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;               // crisp pixel-art edges
+    ctx.drawImage(img, x - g.cx*s, y - g.cy*s, g.w*s, g.h*s);
+    ctx.imageSmoothingEnabled = prev;
   },
 
   // The spoon sprite used to fling food into play. Pivot is at (x,y) —
