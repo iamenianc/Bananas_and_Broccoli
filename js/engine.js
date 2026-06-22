@@ -11,21 +11,33 @@ const hudScore = document.getElementById('score');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
 
-let W=0, H=0, DPR=1;
+// The game is drawn in the FIXED virtual world (CONFIG.worldW x worldH).
+// On resize we only recompute how that fixed world is scaled & centered to
+// fit the actual screen — the world coordinates themselves never change, so
+// the relative position of every object is unaffected by window resizing.
+const VW = CONFIG.worldW, VH = CONFIG.worldH;
+let DPR=1, scale=1, offX=0, offY=0;
 function resize(){
   DPR = Math.min(window.devicePixelRatio||1, 2);
-  W = window.innerWidth; H = window.innerHeight;
-  canvas.width = W*DPR; canvas.height = H*DPR;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const cssW = window.innerWidth, cssH = window.innerHeight;
+  canvas.style.width = cssW+'px';
+  canvas.style.height = cssH+'px';
+  canvas.width  = Math.round(cssW*DPR);
+  canvas.height = Math.round(cssH*DPR);
+  // "contain" fit: uniformly scale the world to fit, then center it.
+  scale = Math.min(cssW/VW, cssH/VH);
+  offX = (cssW - VW*scale)/2;
+  offY = (cssH - VH*scale)/2;
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
 resize();
 
 const State = { MENU:'menu', PLAY:'play', OVER:'over' };
 let state = State.MENU;
 
 let items = [];          // {x,y,vy,type:'banana'|'broccoli',r,resolved}
+let spoons = [];         // {y, age} cosmetic flick animations at the right edge
 let score = 0;
 let elapsed = 0;         // seconds alive
 let spawnTimer = 0;
@@ -35,7 +47,7 @@ let happyTimer = 0;      // >0 while baby shows the eating-banana face
 let lastT = 0;
 
 function reset(){
-  items = []; score = 0; elapsed = 0; spawnTimer = 0;
+  items = []; spoons = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; broccoliEaten = 0; happyTimer = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
@@ -55,7 +67,7 @@ function updateBroccoliHud(){
 }
 
 function babyPos(){
-  return { x: CONFIG.babyXFromLeft, y: H/2 };
+  return { x: CONFIG.babyXFromLeft, y: VH/2 };
 }
 
 function currentSpeed(){
@@ -71,7 +83,7 @@ function spawnOne(sy, isDecoy){
   const type = Math.random() < CONFIG.broccoliChance ? 'broccoli' : 'banana';
   const r = CONFIG.itemRadius;
   const baby = babyPos();
-  const sx = W + r;
+  const sx = VW + r;
   // real items aim at the baby; decoys aim at a point well above/below
   // the catch zone so they sail past and miss.
   const aimY = isDecoy
@@ -116,7 +128,7 @@ function incomingArrivals(sp){
 
 function spawn(){
   const baby = babyPos();
-  const band = H * CONFIG.spawnYJitter;
+  const band = VH * CONFIG.spawnYJitter;
   const n = CONFIG.burstMin + Math.floor(Math.random()*(CONFIG.burstMax-CONFIG.burstMin+1));
   // spread the burst's spawn heights so they enter from different points
   for (let i=0; i<n; i++){
@@ -195,6 +207,10 @@ function update(dt){
     // held back briefly to stagger its arrival — wait off-screen
     if (it.delay > 0){ it.delay -= dt; continue; }
 
+    // first frame it enters play: flick a spoon at the right edge to
+    // "launch" it (item hasn't moved yet, so it.y is its spawn height).
+    if (!it.launched){ it.launched = true; spoons.push({ y: it.y, age: 0 }); }
+
     // incoming item: keep moving along the fixed aim direction
     const speed = sp + (holding ? CONFIG.swatNudge : 0);
     it.vx = it.ux * speed;
@@ -210,16 +226,43 @@ function update(dt){
   // cull resolved items, and anything fully off-screen (any edge)
   items = items.filter(it =>
     !it.resolved &&
-    it.x > -120 && it.x < W+120 && it.y > -120 && it.y < H+120
+    it.x > -120 && it.x < VW+120 && it.y > -120 && it.y < VH+120
   );
+  // advance & retire spoon flick animations
+  for (const sp of spoons) sp.age += dt;
+  spoons = spoons.filter(sp => sp.age < CONFIG.spoonDur);
   hudMode.textContent = holding ? 'SWATTING' : 'CATCHING';
   if (happyTimer > 0) happyTimer -= dt;
 }
 
 function render(){
-  ctx.clearRect(0,0,W,H);
+  // clear the whole device buffer (identity transform)
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // map drawing into the fixed virtual world: scaled & centered to fit.
+  ctx.setTransform(scale*DPR,0,0,scale*DPR, offX*DPR, offY*DPR);
+  ctx.save();
+  // clip to the playfield so off-screen spawns / spoon handles and the
+  // letterbox margins stay clean.
+  ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
+  // white playfield + faint frame so the bounds read on any screen
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,VW,VH);
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1,1,VW-2,VH-2);
+
   const baby = babyPos();
   ART.catchZone(ctx, baby.x, baby.y, CONFIG.resolveRadius);
+  // spoons flicking food in from the right edge
+  for (const sp of spoons){
+    const p = Math.min(1, sp.age/CONFIG.spoonDur);
+    const ease = 1-(1-p)*(1-p);                       // easeOutQuad
+    const angle = CONFIG.spoonWindAngle +
+                  (CONFIG.spoonFlickAngle - CONFIG.spoonWindAngle)*ease;
+    ART.spoon(ctx, VW, sp.y, angle);
+  }
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){
@@ -238,6 +281,7 @@ function render(){
   }
   const face = happyTimer > 0 ? 'eating' : (holding ? 'swat' : 'catch');
   ART.baby(ctx, baby.x, baby.y, holding, face);
+  ctx.restore();
 }
 
 function loop(t){

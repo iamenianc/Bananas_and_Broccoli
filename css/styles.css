@@ -6,17 +6,27 @@
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html, body {
   width:100%; height:100%; overflow:hidden;
-  background:#ffffff; color:#000;
+  /* backdrop behind the letterboxed playfield (visible as margins on
+     screens whose aspect ratio differs from the 16:9 game world) */
+  background:#ececec; color:#000;
   font-family: ui-monospace, "Courier New", monospace;
   touch-action:none; user-select:none; -webkit-user-select:none;
 }
-#game { position:fixed; inset:0; display:block; background:#fff; }
+/* canvas fills the viewport; the white playfield is painted inside it at
+   the fixed virtual-world rect, so the backdrop shows through the margins */
+#game { position:fixed; inset:0; display:block; background:transparent; }
 
 /* HUD */
 #hud {
   position:fixed; top:0; left:0; right:0;
   display:flex; justify-content:space-between; align-items:center;
-  padding:12px 18px; font-size:20px; font-weight:bold;
+  /* keep the HUD clear of notches / rounded corners on modern phones */
+  padding:
+    calc(10px + env(safe-area-inset-top))
+    calc(18px + env(safe-area-inset-right))
+    10px
+    calc(18px + env(safe-area-inset-left));
+  font-size:clamp(16px,2.6vw,22px); font-weight:bold;
   pointer-events:none; z-index:5;
 }
 #score { letter-spacing:1px; }
@@ -54,5 +64,6 @@ html, body {
 .rotate-icon { font-size:64px; margin-bottom:16px; animation:rock 1.6s ease-in-out infinite; }
 @keyframes rock { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
 
-.hint { position:fixed; bottom:14px; left:0; right:0; text-align:center;
+.hint { position:fixed; bottom:calc(14px + env(safe-area-inset-bottom));
+        left:0; right:0; text-align:center;
         font-size:13px; opacity:.45; z-index:5; pointer-events:none; }

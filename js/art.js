@@ -130,6 +130,33 @@ const ART = {
     });
   },
 
+  // A spoon used to fling food into play. Pivot is at (x,y) — place it at
+  // the right edge. Bowl points left (into the playfield); handle runs off
+  // to the right. `angle` rotates the whole spoon about the pivot to give
+  // the flick. Drawn black-on-white to match everything else.
+  spoon(ctx, x, y, angle){
+    const s = CONFIG.spoonSize;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.lineWidth = ART.stroke;
+    ctx.strokeStyle = '#000';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // handle running off to the right of the pivot
+    ctx.beginPath();
+    ctx.moveTo(s*0.15, 0);
+    ctx.lineTo(s*2.0, 0);
+    ctx.stroke();
+    // bowl on the left
+    ctx.beginPath();
+    ctx.ellipse(-s*0.25, 0, s*0.6, s*0.42, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  },
+
   catchZone(ctx, x, y, r){
     ART.wobble(ctx, c=>{
       c.setLineDash([10,12]);
