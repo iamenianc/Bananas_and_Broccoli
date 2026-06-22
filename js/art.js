@@ -162,15 +162,7 @@ const ART = {
       for (let px = -pScroll; px < w; px += pSpacing) {
         // Find exact height of the terrain at this x-coordinate so the tree sits firmly on the hill
         const hillY = _mtY(px + t * 46 + pw / 2, h*0.60, 135, 1.73);
-        ctx.save();
-        ctx.translate(px, hillY - ph + 5);
-        ctx.globalAlpha = 0.85;
-        ctx.drawImage(IMG.palmTrees, 0, 0, pw, ph);
-        // Wash the tree with a heavy pastel tint to flatten it into the background aesthetic
-        ctx.globalCompositeOperation = 'source-atop';
-        ctx.fillStyle = 'rgba(188, 217, 196, 0.85)'; // matches the hill #bcd9c4 with slight transparency
-        ctx.fillRect(0, 0, pw, ph);
-        ctx.restore();
+        ctx.drawImage(IMG.palmTrees, px, hillY - ph + 5, pw, ph);
       }
       ctx.restore();
     }
