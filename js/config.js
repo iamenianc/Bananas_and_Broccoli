@@ -87,12 +87,5 @@ const CONFIG = {
   swatBackSpeed:    520,    // px/sec launch speed of a swatted item
   swatSpinMax:      12,     // max rad/sec spin while flying off
 
-  // spoon launcher — a spoon flicks in from the right edge to fling each
-  // item into play. Purely cosmetic, timed to when the item enters.
-  spoonDur:          0.30,  // seconds the flick animation lasts
-  spoonSize:         46,    // overall spoon scale
-  spoonSpriteScale:  3.2,   // longest side of spoon sprite = spoonSize * this
-  spoonBaseAngle:   -2.36,  // rad: orients the sprite so its bowl faces left
-  spoonWindAngle:    0.95,  // rad: wound-back start angle (added to base)
-  spoonFlickAngle:  -0.75,  // rad: flicked-forward end angle (added to base)
+
 };

@@ -37,7 +37,6 @@ const State = { MENU:'menu', PLAY:'play', OVER:'over' };
 let state = State.MENU;
 
 let items = [];          // {x,y,vy,type:'banana'|'broccoli',r,resolved}
-let spoons = [];         // {y, age} cosmetic flick animations at the right edge
 let score = 0;
 let elapsed = 0;         // seconds alive
 let spawnTimer = 0;
@@ -49,7 +48,7 @@ let powerupTimer = 0;    // >0 while double-score / no-broccoli-penalty buff is 
 let lastT = 0;
 
 function reset(){
-  items = []; spoons = []; score = 0; elapsed = 0; spawnTimer = 0;
+  items = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
@@ -227,10 +226,6 @@ function update(dt){
     // held back briefly to stagger its arrival — wait off-screen
     if (it.delay > 0){ it.delay -= dt; continue; }
 
-    // first frame it enters play: flick a spoon at the right edge to
-    // "launch" it (item hasn't moved yet, so it.y is its spawn height).
-    if (!it.launched){ it.launched = true; spoons.push({ y: it.y, age: 0 }); }
-
     // incoming item: keep moving along the fixed aim direction
     const speed = sp + (holding ? CONFIG.swatNudge : 0);
     it.vx = it.ux * speed;
@@ -288,9 +283,6 @@ function update(dt){
     !it.resolved &&
     it.x > -120 && it.x < VW+120 && it.y > -120 && it.y < VH+120
   );
-  // advance & retire spoon flick animations
-  for (const sp of spoons) sp.age += dt;
-  spoons = spoons.filter(sp => sp.age < CONFIG.spoonDur);
   const modeLabel = powerupTimer > 0
     ? '★ ' + Math.ceil(powerupTimer) + 's'
     : holding ? 'SWATTING' : 'CATCHING';
@@ -311,23 +303,10 @@ function render(){
   // clip to the playfield so off-screen spawns / spoon handles and the
   // letterbox margins stay clean.
   ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
-  // white playfield + faint frame so the bounds read on any screen
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0,0,VW,VH);
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1,1,VW-2,VH-2);
+  ART.background(ctx, VW, VH, elapsed);
 
   const baby = babyPos();
   ART.catchZone(ctx, baby.x, baby.y, CONFIG.resolveRadius);
-  // spoons flicking food in from the right edge
-  for (const sp of spoons){
-    const p = Math.min(1, sp.age/CONFIG.spoonDur);
-    const ease = 1-(1-p)*(1-p);                       // easeOutQuad
-    const angle = CONFIG.spoonWindAngle +
-                  (CONFIG.spoonFlickAngle - CONFIG.spoonWindAngle)*ease;
-    ART.spoon(ctx, VW, sp.y, angle);
-  }
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){

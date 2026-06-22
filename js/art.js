@@ -13,12 +13,66 @@ const IMG = {
   banana:       loadImg('assets/banana.png'),
   bananaPeeled: loadImg('assets/banana_peeled.png'),
   broccoli:     loadImg('assets/broccoli.png'),
-  spoon:        loadImg('assets/spoon.png'),
   babyCatch:    loadImg('assets/baby_catch.svg'),
   babySwat:     loadImg('assets/baby_swat.svg'),
   babyEat:      loadImg('assets/baby_eat.svg'),
   babyYuck:     loadImg('assets/baby_yuck.svg'),
 };
+
+/* ---- parallax background helpers ---- */
+function _mtY(lx, baseY, amp, seed){
+  const v =
+    Math.sin(lx * 0.0028 + seed)        * 0.42 +
+    Math.sin(lx * 0.0073 + seed * 2.1)  * 0.26 +
+    Math.sin(lx * 0.0160 + seed * 3.7)  * 0.17 +
+    Math.sin(lx * 0.0340 + seed * 5.9)  * 0.10 +
+    Math.sin(lx * 0.0700 + seed * 8.3)  * 0.05;
+  return baseY - Math.max(0, (v + 1) * 0.5) * amp;
+}
+
+function _bgLayer(ctx, w, h, scroll, baseY, amp, color, seed){
+  const tw  = w * 2;
+  const off = ((scroll % tw) + tw) % tw;
+  // draw up to 2 tiles to cover the full viewport with no seam artefact
+  for (let tile = 0; tile <= 1; tile++){
+    const tl = tile * tw - off;          // screen x of this tile's left edge
+    const tr = tl + tw;
+    if (tr < 0 || tl > w) continue;
+    const x0 = Math.max(0, tl), x1 = Math.min(w, tr);
+    ctx.beginPath();
+    ctx.moveTo(x0, h);
+    for (let sx = x0; sx <= x1; sx += 3)
+      ctx.lineTo(sx, _mtY(sx - tl, baseY, amp, seed));
+    ctx.lineTo(x1, h);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
+function _palm(ctx, x, y, size){
+  ctx.save();
+  ctx.strokeStyle = '#1a3520';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(2, size * 0.08);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x + size*0.12, y - size*0.35,
+                    x + size*0.18, y - size*0.70,
+                    x + size*0.06, y - size);
+  ctx.stroke();
+  const tx = x + size*0.06, ty = y - size;
+  ctx.lineWidth = Math.max(1, size * 0.05);
+  for (const [fx, fy] of [[-0.9,-0.35],[-0.55,-0.65],[-0.1,-0.75],
+                           [ 0.45,-0.65],[ 0.85,-0.35],[0.5,-0.05],[-0.45,-0.05]]){
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.quadraticCurveTo(tx + fx*size*0.5, ty + fy*size*0.5 + size*0.05,
+                         tx + fx*size,     ty + fy*size);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 
 // Pixel-art baby sprite metrics (must match tools/gen_baby.py grid): the
 // head center sits at (cx,cy) in the 24x20 grid, so we can anchor the head
@@ -77,16 +131,35 @@ const ART = {
     ctx.imageSmoothingEnabled = prev;
   },
 
-  // The spoon sprite used to fling food into play. Pivot is at (x,y) —
-  // placed at the right edge. `angle` is the flick rotation; a base angle
-  // turns the source illustration so its bowl points into the playfield.
-  spoon(ctx, x, y, angle){
-    if (!IMG.spoon.complete || !IMG.spoon.naturalWidth) return;
+  background(ctx, w, h, t){
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0,    '#2176ae');
+    sky.addColorStop(0.55, '#a8d8f0');
+    sky.addColorStop(1,    '#c5e8d0');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle + CONFIG.spoonBaseAngle);
-    ART.sprite(ctx, IMG.spoon, 0, 0, CONFIG.spoonSize * CONFIG.spoonSpriteScale);
+    ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 52, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,250,190,0.35)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 36, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,245,160,0.95)'; ctx.fill();
     ctx.restore();
+    // layers: far misty → mid forest → near hills
+    _bgLayer(ctx, w, h, t *  18, h*0.52, 155, '#7fa8c0', 0.50);
+    _bgLayer(ctx, w, h, t *  46, h*0.60, 135, '#1b5230', 1.73);
+    _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#25703e', 3.21);
+    // foreground hills + palm trees
+    const fgTw = w * 2, fgBase = h*0.79, fgAmp = 55, fgSeed = 6.10;
+    const fgOff = ((t * 140 % fgTw) + fgTw) % fgTw;
+    _bgLayer(ctx, w, h, t * 140, fgBase, fgAmp, '#2e8a4a', fgSeed);
+    for (const frac of [0.08, 0.24, 0.40, 0.55, 0.71, 0.87]){
+      const lx = frac * fgTw;
+      for (const wrap of [0, fgTw]){
+        const sx = lx - fgOff + wrap;
+        if (sx > -90 && sx < w + 90)
+          _palm(ctx, sx, _mtY(lx, fgBase, fgAmp, fgSeed), h * 0.13);
+      }
+    }
   },
 
   // Pink banana power-up — the normal banana sprite with a hot-pink tint overlay.

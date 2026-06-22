@@ -1,4 +1,4 @@
-const CACHE = 'bananas-v10';
+const CACHE = 'bananas-v11';
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -9,7 +9,6 @@ const ASSETS = [
   'assets/banana.png',
   'assets/banana_peeled.png',
   'assets/broccoli.png',
-  'assets/spoon.png',
   'assets/baby_catch.svg',
   'assets/baby_swat.svg',
   'assets/baby_eat.svg',
