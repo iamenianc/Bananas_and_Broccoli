@@ -52,7 +52,7 @@ function _bgLayer(ctx, w, h, scroll, baseY, amp, color, seed){
 
 function _palm(ctx, x, y, size){
   ctx.save();
-  ctx.strokeStyle = '#1a3520';
+  ctx.strokeStyle = '#7fae89';
   ctx.lineCap = 'round';
   ctx.lineWidth = Math.max(2, size * 0.08);
   ctx.beginPath();
@@ -133,25 +133,25 @@ const ART = {
 
   background(ctx, w, h, t){
     const sky = ctx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0,    '#2176ae');
-    sky.addColorStop(0.55, '#a8d8f0');
-    sky.addColorStop(1,    '#c5e8d0');
+    sky.addColorStop(0,    '#cfe8f5');
+    sky.addColorStop(0.55, '#e3f2fb');
+    sky.addColorStop(1,    '#eef7f0');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, w, h);
     ctx.save();
     ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 52, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,250,190,0.35)'; ctx.fill();
+    ctx.fillStyle = 'rgba(255,252,225,0.30)'; ctx.fill();
     ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 36, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,245,160,0.95)'; ctx.fill();
+    ctx.fillStyle = 'rgba(255,250,210,0.70)'; ctx.fill();
     ctx.restore();
-    // layers: far misty → mid forest → near hills
-    _bgLayer(ctx, w, h, t *  18, h*0.52, 155, '#7fa8c0', 0.50);
-    _bgLayer(ctx, w, h, t *  46, h*0.60, 135, '#1b5230', 1.73);
-    _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#25703e', 3.21);
+    // layers: far misty → mid forest → near hills (washed-out pastels)
+    _bgLayer(ctx, w, h, t *  18, h*0.52, 155, '#cdddea', 0.50);
+    _bgLayer(ctx, w, h, t *  46, h*0.60, 135, '#bcd9c4', 1.73);
+    _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#aed4b4', 3.21);
     // foreground hills + palm trees
     const fgTw = w * 2, fgBase = h*0.79, fgAmp = 55, fgSeed = 6.10;
     const fgOff = ((t * 140 % fgTw) + fgTw) % fgTw;
-    _bgLayer(ctx, w, h, t * 140, fgBase, fgAmp, '#2e8a4a', fgSeed);
+    _bgLayer(ctx, w, h, t * 140, fgBase, fgAmp, '#9ccba6', fgSeed);
     for (const frac of [0.08, 0.24, 0.40, 0.55, 0.71, 0.87]){
       const lx = frac * fgTw;
       for (const wrap of [0, fgTw]){
