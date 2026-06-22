@@ -66,11 +66,14 @@ const CONFIG = {
   happyFaceTime:    0.45,   // seconds the baby looks happy after catching a banana
   yuckFaceTime:     0.55,   // seconds the baby looks disgusted after eating broccoli
 
-  // power-up: a rare star item — catching it doubles banana points and makes
-  // broccoli harmless for powerupDuration seconds.
-  powerupChance:    0.05,   // fraction of real-item spawns that become powerups
+  // power-up: a rare pink banana — catching it doubles banana points, makes
+  // broccoli harmless, triples item speed, and doubles the baby's size for
+  // powerupDuration seconds. Deliberately rare.
+  powerupChance:    0.02,   // fraction of real-item spawns that become powerups
   powerupDuration:  6,      // seconds the buff lasts
-  powerupSpinRate:  3,      // rad/sec the star spins while incoming
+  powerupSpinRate:  3,      // rad/sec the pink banana spins while incoming
+  powerupSpeedMult: 3,      // item speed multiplier while the buff is active
+  powerupBabyScale: 2,      // baby size multiplier while the buff is active
 
   // sprite sizing — food/spoon are drawn from PNG illustrations in assets/.
   // foodSpriteScale: longest side of a food sprite = itemRadius * this.

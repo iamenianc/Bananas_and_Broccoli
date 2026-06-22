@@ -72,8 +72,9 @@ function babyPos(){
 }
 
 function currentSpeed(){
-  return Math.min(CONFIG.maxSpeed,
+  const base = Math.min(CONFIG.maxSpeed,
     CONFIG.baseSpeed + CONFIG.accelPerSec*elapsed);
+  return powerupTimer > 0 ? base * CONFIG.powerupSpeedMult : base;
 }
 function currentSpawnInterval(){
   return Math.max(CONFIG.spawnEveryMin,
@@ -332,7 +333,8 @@ function render(){
   const face = happyTimer > 0 ? 'eating'
              : yuckTimer  > 0 ? 'yuck'
              : holding ? 'swat' : 'catch';
-  ART.baby(ctx, baby.x, baby.y, holding, face);
+  const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
+  ART.baby(ctx, baby.x, baby.y, holding, face, babyScale);
   ctx.restore();
 }
 

@@ -50,27 +50,24 @@ function _bgLayer(ctx, w, h, scroll, baseY, amp, color, seed){
   }
 }
 
-function _palm(ctx, x, y, size){
+// A soft puffy cloud built from overlapping circles. (cx,cy) is the cloud
+// center; size is its overall radius. Drawn in a single flat fill colour.
+function _cloud(ctx, cx, cy, size, color){
   ctx.save();
-  ctx.strokeStyle = '#7fae89';
-  ctx.lineCap = 'round';
-  ctx.lineWidth = Math.max(2, size * 0.08);
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.bezierCurveTo(x + size*0.12, y - size*0.35,
-                    x + size*0.18, y - size*0.70,
-                    x + size*0.06, y - size);
-  ctx.stroke();
-  const tx = x + size*0.06, ty = y - size;
-  ctx.lineWidth = Math.max(1, size * 0.05);
-  for (const [fx, fy] of [[-0.9,-0.35],[-0.55,-0.65],[-0.1,-0.75],
-                           [ 0.45,-0.65],[ 0.85,-0.35],[0.5,-0.05],[-0.45,-0.05]]){
+  ctx.fillStyle = color;
+  // lobes: [dx, dy, r] relative to size — a classic cumulus silhouette
+  const lobes = [[-0.95,0.10,0.55],[-0.45,-0.25,0.70],[0.15,-0.35,0.78],
+                 [0.70,-0.10,0.62],[1.05,0.15,0.45],
+                 [-0.35,0.30,0.55],[0.45,0.30,0.55]];
+  for (const [dx, dy, r] of lobes){
     ctx.beginPath();
-    ctx.moveTo(tx, ty);
-    ctx.quadraticCurveTo(tx + fx*size*0.5, ty + fy*size*0.5 + size*0.05,
-                         tx + fx*size,     ty + fy*size);
-    ctx.stroke();
+    ctx.arc(cx + dx*size, cy + dy*size, r*size, 0, Math.PI*2);
+    ctx.fill();
   }
+  // flat-ish base so the cloud reads as floating, not a blob
+  ctx.beginPath();
+  ctx.ellipse(cx + 0.05*size, cy + 0.42*size, 1.15*size, 0.4*size, 0, 0, Math.PI*2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -117,14 +114,14 @@ const ART = {
   // The baby, drawn from 16-bit pixel-art SVG sprites (black hair, brown
   // eyes). face: 'catch' | 'swat' | 'eating' | 'yuck'. The head is anchored
   // over (x,y); hands reach toward the RIGHT (incoming items).
-  baby(ctx, x, y, swatting, face){
+  baby(ctx, x, y, swatting, face, scale){
     face = face || (swatting ? 'swat' : 'catch');
     const img = face === 'eating' ? IMG.babyEat
               : face === 'yuck'   ? IMG.babyYuck
               : (face === 'swat' || swatting) ? IMG.babySwat
               : IMG.babyCatch;
     if (!img.complete || !img.naturalWidth) return;
-    const g = BABY_GRID, s = CONFIG.babyPixel;       // canvas px per sprite px
+    const g = BABY_GRID, s = CONFIG.babyPixel * (scale || 1);  // canvas px per sprite px
     const prev = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;               // crisp pixel-art edges
     ctx.drawImage(img, x - g.cx*s, y - g.cy*s, g.w*s, g.h*s);
@@ -144,22 +141,27 @@ const ART = {
     ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 36, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(255,250,210,0.70)'; ctx.fill();
     ctx.restore();
+    // drifting clouds (drawn behind the hills so peaks overlap them):
+    // [xfrac, yfrac, sizefrac, speed, color]
+    const clouds = [
+      [0.10, 0.16, 0.060, 12, 'rgba(255,255,255,0.85)'],
+      [0.42, 0.10, 0.085, 20, 'rgba(255,255,255,0.92)'],
+      [0.72, 0.20, 0.052, 16, 'rgba(255,255,255,0.80)'],
+      [0.90, 0.30, 0.070, 26, 'rgba(255,255,255,0.88)'],
+      [0.25, 0.32, 0.045, 30, 'rgba(255,255,255,0.75)'],
+    ];
+    const span = w * 1.4;                       // wrap width (off-screen margin)
+    for (const [xf, yf, sf, spd, col] of clouds){
+      let cx = (xf*w - t*spd) % span;
+      if (cx < -0.3*w) cx += span;
+      _cloud(ctx, cx, yf*h, sf*Math.min(w,h*1.4)*2.2, col);
+    }
     // layers: far misty → mid forest → near hills (washed-out pastels)
     _bgLayer(ctx, w, h, t *  18, h*0.52, 155, '#cdddea', 0.50);
     _bgLayer(ctx, w, h, t *  46, h*0.60, 135, '#bcd9c4', 1.73);
     _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#aed4b4', 3.21);
-    // foreground hills + palm trees
-    const fgTw = w * 2, fgBase = h*0.79, fgAmp = 55, fgSeed = 6.10;
-    const fgOff = ((t * 140 % fgTw) + fgTw) % fgTw;
-    _bgLayer(ctx, w, h, t * 140, fgBase, fgAmp, '#9ccba6', fgSeed);
-    for (const frac of [0.08, 0.24, 0.40, 0.55, 0.71, 0.87]){
-      const lx = frac * fgTw;
-      for (const wrap of [0, fgTw]){
-        const sx = lx - fgOff + wrap;
-        if (sx > -90 && sx < w + 90)
-          _palm(ctx, sx, _mtY(lx, fgBase, fgAmp, fgSeed), h * 0.13);
-      }
-    }
+    // foreground hills
+    _bgLayer(ctx, w, h, t * 140, h*0.79, 55, '#9ccba6', 6.10);
   },
 
   // Pink banana power-up — the normal banana sprite with a hot-pink tint overlay.
