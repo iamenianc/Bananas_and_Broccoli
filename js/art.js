@@ -22,7 +22,7 @@ const IMG = {
 // Pixel-art baby sprite metrics (must match tools/gen_baby.py grid): the
 // head center sits at (cx,cy) in the 24x20 grid, so we can anchor the head
 // over the baby's logical position while the hands extend to the right.
-const BABY_GRID = { w:24, h:20, cx:8.5, cy:9 };
+const BABY_GRID = { w:30, h:22, cx:9.5, cy:10.7 };
 
 const ART = {
   stroke: 3,

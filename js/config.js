@@ -68,8 +68,8 @@ const CONFIG = {
   // foodSpriteScale: longest side of a food sprite = itemRadius * this.
   foodSpriteScale:  2.8,
   // baby is a 16-bit pixel-art SVG (assets/baby_*.svg); canvas px per
-  // sprite pixel. ~6 makes the head roughly the old hand-drawn size.
-  babyPixel:        6,
+  // sprite pixel. ~4.8 keeps the (now larger-grid) head ~80px across.
+  babyPixel:        4.8,
 
   // color (kept for reference; sprites now provide the look)
   bananaFill:       '#ffd23f',
