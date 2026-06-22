@@ -13,6 +13,7 @@ const IMG = {
   banana:       loadImg('assets/banana.webp'),
   bananaPeeled: loadImg('assets/banana_peeled.webp'),
   broccoli:     loadImg('assets/broccoli.webp'),
+  palmTrees:    loadImg('assets/palm_trees.webp'),
   babyCatch:    loadImg('assets/baby_catch.svg'),
   babySwat:     loadImg('assets/baby_swat.svg'),
   babyEat:      loadImg('assets/baby_eat.svg'),
@@ -30,23 +31,15 @@ function _mtY(lx, baseY, amp, seed){
 }
 
 function _bgLayer(ctx, w, h, scroll, baseY, amp, color, seed){
-  const tw  = w * 2;
-  const off = ((scroll % tw) + tw) % tw;
-  // draw up to 2 tiles to cover the full viewport with no seam artefact
-  for (let tile = 0; tile <= 1; tile++){
-    const tl = tile * tw - off;          // screen x of this tile's left edge
-    const tr = tl + tw;
-    if (tr < 0 || tl > w) continue;
-    const x0 = Math.max(0, tl), x1 = Math.min(w, tr);
-    ctx.beginPath();
-    ctx.moveTo(x0, h);
-    for (let sx = x0; sx <= x1; sx += 3)
-      ctx.lineTo(sx, _mtY(sx - tl, baseY, amp, seed));
-    ctx.lineTo(x1, h);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let sx = 0; sx <= w + 3; sx += 3) {
+    ctx.lineTo(sx, _mtY(sx + scroll, baseY, amp, seed));
   }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
 }
 
 // A soft puffy cloud built from overlapping circles. (cx,cy) is the cloud
@@ -158,6 +151,30 @@ const ART = {
     // layers: far misty → mid forest → near hills (washed-out pastels)
     _bgLayer(ctx, w, h, t *  18, h*0.52, 155, '#cdddea', 0.50);
     _bgLayer(ctx, w, h, t *  46, h*0.60, 135, '#bcd9c4', 1.73);
+    
+    // Draw scrolling palm trees sitting on the distant hill
+    if (IMG.palmTrees && IMG.palmTrees.complete && IMG.palmTrees.naturalWidth) {
+      const pw = IMG.palmTrees.naturalWidth * 0.15; // smaller scale for distance
+      const ph = IMG.palmTrees.naturalHeight * 0.15;
+      const pSpacing = w * 0.35; // closer spacing for distant objects
+      const pScroll = (t * 46) % pSpacing; // sync speed exactly with the t*46 hill layer
+      ctx.save();
+      for (let px = -pScroll; px < w; px += pSpacing) {
+        // Find exact height of the terrain at this x-coordinate so the tree sits firmly on the hill
+        const hillY = _mtY(px + t * 46 + pw / 2, h*0.60, 135, 1.73);
+        ctx.save();
+        ctx.translate(px, hillY - ph + 5);
+        ctx.globalAlpha = 0.85;
+        ctx.drawImage(IMG.palmTrees, 0, 0, pw, ph);
+        // Wash the tree with a heavy pastel tint to flatten it into the background aesthetic
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = 'rgba(188, 217, 196, 0.85)'; // matches the hill #bcd9c4 with slight transparency
+        ctx.fillRect(0, 0, pw, ph);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
     _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#aed4b4', 3.21);
     // foreground hills
     _bgLayer(ctx, w, h, t * 140, h*0.79, 55, '#9ccba6', 6.10);
