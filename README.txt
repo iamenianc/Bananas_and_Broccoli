@@ -11,6 +11,7 @@ FILES
   js/config.js      tunable gameplay numbers (rebalance here)
   js/art.js         drawing functions (restyle here)
   js/engine.js      spawning, physics, input, scoring, loop
+  assets/*.png      food & spoon illustrations drawn by js/art.js
   manifest.json     PWA manifest (icon, name, landscape lock)
   sw.js             service worker (offline/install support)
   README.txt        this file

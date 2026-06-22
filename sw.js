@@ -1,4 +1,4 @@
-const CACHE = 'bananas-v3';
+const CACHE = 'bananas-v4';
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -6,6 +6,10 @@ const ASSETS = [
   'js/config.js',
   'js/art.js',
   'js/engine.js',
+  'assets/banana.png',
+  'assets/banana_peeled.png',
+  'assets/broccoli.png',
+  'assets/spoon.png',
 ];
 
 self.addEventListener('install', e => {

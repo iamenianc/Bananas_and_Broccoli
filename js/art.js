@@ -6,8 +6,27 @@
    logic. Reads fills from the global CONFIG (config.js must load
    first). Exposed as a global `ART` for engine.js.
    ============================================================ */
+// Preloaded sprite images (full-colour illustrations). They start loading
+// immediately; until ready, ART.sprite() simply skips drawing that frame.
+function loadImg(src){ const i = new Image(); i.src = src; return i; }
+const IMG = {
+  banana:       loadImg('assets/banana.png'),
+  bananaPeeled: loadImg('assets/banana_peeled.png'),
+  broccoli:     loadImg('assets/broccoli.png'),
+  spoon:        loadImg('assets/spoon.png'),
+};
+
 const ART = {
   stroke: 3,
+
+  // Draw a sprite centered at (x,y), scaled so its longest side == size,
+  // aspect-preserved. No-op until the image has loaded.
+  sprite(ctx, img, x, y, size){
+    if (!img.complete || !img.naturalWidth) return;
+    const k = size / Math.max(img.naturalWidth, img.naturalHeight);
+    const w = img.naturalWidth * k, h = img.naturalHeight * k;
+    ctx.drawImage(img, x - w/2, y - h/2, w, h);
+  },
 
   wobble(ctx, fn){
     ctx.save();
@@ -20,64 +39,16 @@ const ART = {
   },
 
   banana(ctx, x, y, r){
-    ART.wobble(ctx, c=>{
-      c.beginPath();
-      c.moveTo(x - r*0.9, y - r*0.2);
-      c.quadraticCurveTo(x - r*0.2, y + r*1.1, x + r*0.95, y - r*0.1);
-      c.quadraticCurveTo(x + r*0.2, y + r*0.45, x - r*0.9, y - r*0.2);
-      c.closePath();
-      c.fillStyle = CONFIG.bananaFill; c.fill();
-      c.stroke();
-      // tip
-      c.beginPath();
-      c.moveTo(x - r*0.9, y - r*0.2);
-      c.lineTo(x - r*1.05, y - r*0.5);
-      c.stroke();
-    });
+    ART.sprite(ctx, IMG.banana, x, y, r * CONFIG.foodSpriteScale);
   },
 
-  // A banana that's been swatted/rejected: same body, but with the peel
-  // split open at the tip into a couple of drooping flaps so it reads as
-  // "half peeled" as it tumbles away.
+  // A banana that's been swatted/rejected — the half-peeled illustration.
   bananaPeeled(ctx, x, y, r){
-    ART.wobble(ctx, c=>{
-      // body (slightly paler fruit showing through)
-      c.beginPath();
-      c.moveTo(x - r*0.9, y - r*0.2);
-      c.quadraticCurveTo(x - r*0.2, y + r*1.1, x + r*0.95, y - r*0.1);
-      c.quadraticCurveTo(x + r*0.2, y + r*0.45, x - r*0.9, y - r*0.2);
-      c.closePath();
-      c.fillStyle = '#fff3c4'; c.fill();   // pale, peeled fruit
-      c.stroke();
-      // peel flaps opening from the left tip, drooping down
-      c.beginPath();
-      c.moveTo(x - r*0.9, y - r*0.2);
-      c.quadraticCurveTo(x - r*1.5, y + r*0.2, x - r*1.25, y + r*0.85);
-      c.stroke();
-      c.beginPath();
-      c.moveTo(x - r*0.9, y - r*0.2);
-      c.quadraticCurveTo(x - r*1.7, y - r*0.1, x - r*1.6, y + r*0.55);
-      c.stroke();
-    });
+    ART.sprite(ctx, IMG.bananaPeeled, x, y, r * CONFIG.foodSpriteScale);
   },
 
   broccoli(ctx, x, y, r){
-    ART.wobble(ctx, c=>{
-      // stalk
-      c.beginPath();
-      c.moveTo(x - r*0.18, y + r*0.9);
-      c.lineTo(x - r*0.1, y);
-      c.moveTo(x + r*0.18, y + r*0.9);
-      c.lineTo(x + r*0.1, y);
-      c.stroke();
-      // florets (3 bumpy circles)
-      [[-0.5,-0.2,0.55],[0.5,-0.2,0.55],[0,-0.6,0.6]].forEach(([dx,dy,rr])=>{
-        c.beginPath();
-        c.arc(x+dx*r, y+dy*r, rr*r, 0, Math.PI*2);
-        c.fillStyle = CONFIG.broccoliFill; c.fill();
-        c.stroke();
-      });
-    });
+    ART.sprite(ctx, IMG.broccoli, x, y, r * CONFIG.foodSpriteScale);
   },
 
   // The baby. face: 'catch' | 'swat' | 'eating'
@@ -130,30 +101,15 @@ const ART = {
     });
   },
 
-  // A spoon used to fling food into play. Pivot is at (x,y) — place it at
-  // the right edge. Bowl points left (into the playfield); handle runs off
-  // to the right. `angle` rotates the whole spoon about the pivot to give
-  // the flick. Drawn black-on-white to match everything else.
+  // The spoon sprite used to fling food into play. Pivot is at (x,y) —
+  // placed at the right edge. `angle` is the flick rotation; a base angle
+  // turns the source illustration so its bowl points into the playfield.
   spoon(ctx, x, y, angle){
-    const s = CONFIG.spoonSize;
+    if (!IMG.spoon.complete || !IMG.spoon.naturalWidth) return;
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.lineWidth = ART.stroke;
-    ctx.strokeStyle = '#000';
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    // handle running off to the right of the pivot
-    ctx.beginPath();
-    ctx.moveTo(s*0.15, 0);
-    ctx.lineTo(s*2.0, 0);
-    ctx.stroke();
-    // bowl on the left
-    ctx.beginPath();
-    ctx.ellipse(-s*0.25, 0, s*0.6, s*0.42, 0, 0, Math.PI*2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
-    ctx.stroke();
+    ctx.rotate(angle + CONFIG.spoonBaseAngle);
+    ART.sprite(ctx, IMG.spoon, 0, 0, CONFIG.spoonSize * CONFIG.spoonSpriteScale);
     ctx.restore();
   },
 

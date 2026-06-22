@@ -64,7 +64,11 @@ const CONFIG = {
   swatNudge:        0,      // optional extra speed when swatting (0 = off)
   happyFaceTime:    0.45,   // seconds the baby looks happy after catching a banana
 
-  // color (outlines stay black; these are fills)
+  // sprite sizing — food/spoon are drawn from PNG illustrations in assets/.
+  // foodSpriteScale: longest side of a food sprite = itemRadius * this.
+  foodSpriteScale:  2.8,
+
+  // color (kept for reference; sprites now provide the look)
   bananaFill:       '#ffd23f',
   broccoliFill:     '#5fae46',
 
@@ -74,8 +78,10 @@ const CONFIG = {
 
   // spoon launcher — a spoon flicks in from the right edge to fling each
   // item into play. Purely cosmetic, timed to when the item enters.
-  spoonDur:         0.30,   // seconds the flick animation lasts
-  spoonSize:        46,     // overall spoon scale
-  spoonWindAngle:    0.95,  // rad: wound-back start angle
-  spoonFlickAngle:  -0.75,  // rad: flicked-forward end angle
+  spoonDur:          0.30,  // seconds the flick animation lasts
+  spoonSize:         46,    // overall spoon scale
+  spoonSpriteScale:  3.2,   // longest side of spoon sprite = spoonSize * this
+  spoonBaseAngle:   -2.36,  // rad: orients the sprite so its bowl faces left
+  spoonWindAngle:    0.95,  // rad: wound-back start angle (added to base)
+  spoonFlickAngle:  -0.75,  // rad: flicked-forward end angle (added to base)
 };
