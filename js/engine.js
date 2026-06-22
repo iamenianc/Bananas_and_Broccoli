@@ -246,6 +246,24 @@ function update(dt){
       }
     }
   }
+  // flying broccoli hitting an incoming broccoli: 50% chance to knock it offscreen
+  for (const flt of items){
+    if (!flt.flying || flt.type !== 'broccoli') continue;
+    for (const inc of items){
+      if (inc.flying || inc.resolved || inc.type !== 'broccoli') continue;
+      if (Math.hypot(flt.x - inc.x, flt.y - inc.y) <= flt.r + inc.r){
+        if (Math.random() < 0.5){
+          const ang = Math.atan2(flt.vy, flt.vx) + (Math.random() - 0.5) * 1.0;
+          inc.flying = true;
+          inc.vx = Math.cos(ang) * CONFIG.swatBackSpeed;
+          inc.vy = Math.sin(ang) * CONFIG.swatBackSpeed;
+          inc.spin = (Math.random() * 2 - 1) * CONFIG.swatSpinMax;
+          inc.rot = 0;
+        }
+        break;
+      }
+    }
+  }
   // cull resolved items, and anything fully off-screen (any edge)
   items = items.filter(it =>
     !it.resolved &&
