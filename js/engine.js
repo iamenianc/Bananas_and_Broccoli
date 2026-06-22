@@ -406,7 +406,13 @@ function gameOver(reason){
 }
 
 /* ---- input: hold anywhere = swat ---- */
-function down(e){ if(state===State.PLAY){ holding=true; } e.preventDefault(); }
+function down(e){
+  if(state===State.PLAY){
+    holding=true;
+    happyTimer=0; yuckTimer=0;   // cancel any face animation so blocking starts instantly
+  }
+  e.preventDefault();
+}
 function up(e){ if(state===State.PLAY){ holding=false; } e.preventDefault(); }
 canvas.addEventListener('pointerdown', down, { passive: false });
 window.addEventListener('pointerup',     up,  { passive: false });
