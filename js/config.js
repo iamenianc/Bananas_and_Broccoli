@@ -16,13 +16,14 @@ const CONFIG = {
   worldH:           720,
 
   // world — items now TRAVEL horizontally from the right edge toward the baby
-  baseSpeed:        220,    // px/sec along the aim line, at start
+  baseSpeed:        300,    // px/sec along the aim line, at start
   accelPerSec:      11,     // speed gained each second alive
   maxSpeed:         1000,
   spawnEveryStart:  1.05,   // seconds between spawn BURSTS at start
   spawnEveryMin:    0.42,   // fastest spawn interval
   spawnRampPerSec:  0.012,  // how fast spawn interval tightens
-  broccoliChance:   0.42,   // fraction of spawns that are broccoli
+  broccoliChance:   0.444,  // fraction of spawns that are broccoli
+                            // (=> 25% more bananas than broccoli: 0.556 vs 0.444)
 
   // each spawn is a BURST of 1-3 items thrown together. Some are decoys
   // aimed to MISS the baby (fly past above/below) — visual noise the
