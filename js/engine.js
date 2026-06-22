@@ -49,6 +49,7 @@ let powerupTimer = 0;    // >0 while double-score / no-broccoli-penalty buff is 
 let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
 let barrageTimer = 0;    // >0 while barrage is active
 let timeSinceLastBarrage = 50; // seconds since last barrage ended
+let lastBroccoliEaten = 0; // tracking for HUD flash checks
 let lastT = 0;
 
 function reset(){
@@ -56,6 +57,7 @@ function reset(){
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
   bananaStreak = 0;
   barrageTimer = 0;
+  lastBroccoliEaten = 0;
   timeSinceLastBarrage = 50;
   hudScore.textContent = '0';
   updateBroccoliHud();
@@ -73,6 +75,13 @@ function updateBroccoliHud(){
   hudBroccoli.innerHTML = html;
   hudBroccoli.classList.toggle('warn',
     broccoliEaten >= CONFIG.broccoliEatenLimit - 3);
+
+  if (broccoliEaten > lastBroccoliEaten) {
+    hudBroccoli.classList.remove('flash');
+    void hudBroccoli.offsetWidth; // trigger reflow to restart animation
+    hudBroccoli.classList.add('flash');
+  }
+  lastBroccoliEaten = broccoliEaten;
 }
 
 function babyPos(){

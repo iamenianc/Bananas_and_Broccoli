@@ -47,6 +47,7 @@ html, body {
 }
 #broccoli .b.left {
   opacity: 1;
+  background: #5fae46; /* green when good */
 }
 #broccoli .b.lost {
   background: #000;
@@ -54,14 +55,29 @@ html, body {
 }
 #broccoli.warn {
   border-color: #d90429;
-  animation: borderpulse .7s ease-in-out infinite;
 }
 #broccoli.warn .b.left {
-  background: #d90429;
+  background: #d90429; /* critical warning state */
 }
-@keyframes borderpulse {
-  0%, 100% { border-color: #000; }
-  50% { border-color: #d90429; }
+#broccoli.flash {
+  animation: flash-red 0.35s ease-out;
+}
+#broccoli.flash .b.left {
+  background: #d90429 !important;
+}
+@keyframes flash-red {
+  0% {
+    border-color: #d90429;
+    background: #ffe5e5;
+  }
+  50% {
+    border-color: #d90429;
+    background: #ffb3b3;
+  }
+  100% {
+    border-color: #000;
+    background: #fff;
+  }
 }
 #mode  { opacity:.55; font-size:14px; }
 
