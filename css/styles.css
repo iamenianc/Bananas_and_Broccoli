@@ -32,9 +32,9 @@ html, body {
 #score { letter-spacing:1px; }
 #broccoli { font-size:18px; letter-spacing:2px; display:flex; gap:3px; }
 #broccoli .b { display:inline-block; transition:opacity .2s, filter .2s; }
-#broccoli .b.eaten { opacity:1; filter:none; }
-#broccoli .b.left  { opacity:.28; filter:grayscale(1); }
-#broccoli.warn .b.eaten { animation:bpulse .7s ease-in-out infinite; }
+#broccoli .b.left { opacity:1; filter:none; }
+#broccoli .b.lost { opacity:.3; filter:grayscale(1); }
+#broccoli.warn .b.left { animation:bpulse .7s ease-in-out infinite; }
 @keyframes bpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
 #mode  { opacity:.55; font-size:14px; }
 

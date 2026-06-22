@@ -56,13 +56,14 @@ function reset(){
   updateBroccoliHud();
 }
 
-// Render the broccoli "lives" as a row of broccoli icons — one per
-// allowed broccoli — filling in as they're eaten, instead of a N/6 tally.
+// Render lives as a row of hearts — one per allowed broccoli. Each broccoli
+// eaten loses a heart; the row empties from the right as lives are spent.
 function updateBroccoliHud(){
   let html = '';
   for (let i=0; i<CONFIG.broccoliEatenLimit; i++){
-    const cls = i < broccoliEaten ? 'b eaten' : 'b left';
-    html += '<span class="' + cls + '">🥦</span>';
+    const alive = i < CONFIG.broccoliEatenLimit - broccoliEaten;
+    const cls = alive ? 'b left' : 'b lost';
+    html += '<span class="' + cls + '">' + (alive ? '❤️' : '🖤') + '</span>';
   }
   hudBroccoli.innerHTML = html;
   hudBroccoli.classList.toggle('warn',
