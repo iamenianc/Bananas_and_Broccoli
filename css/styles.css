@@ -14,7 +14,7 @@ html, body {
 }
 /* canvas fills the viewport; the white playfield is painted inside it at
    the fixed virtual-world rect, so the backdrop shows through the margins */
-#game { position:fixed; inset:0; display:block; background:transparent; }
+#game { position:fixed; inset:0; display:block; background:transparent; touch-action:none; }
 
 /* HUD */
 #hud {

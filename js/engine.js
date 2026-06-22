@@ -254,7 +254,8 @@ function update(dt){
   // advance & retire spoon flick animations
   for (const sp of spoons) sp.age += dt;
   spoons = spoons.filter(sp => sp.age < CONFIG.spoonDur);
-  hudMode.textContent = holding ? 'SWATTING' : 'CATCHING';
+  const modeLabel = holding ? 'SWATTING' : 'CATCHING';
+  if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (happyTimer > 0) happyTimer -= dt;
   if (yuckTimer  > 0) yuckTimer  -= dt;
 }
@@ -368,9 +369,9 @@ function gameOver(reason){
 /* ---- input: hold anywhere = swat ---- */
 function down(e){ if(state===State.PLAY){ holding=true; } e.preventDefault(); }
 function up(e){ if(state===State.PLAY){ holding=false; } e.preventDefault(); }
-canvas.addEventListener('pointerdown', down);
-window.addEventListener('pointerup', up);
-window.addEventListener('pointercancel', up);
+canvas.addEventListener('pointerdown', down, { passive: false });
+window.addEventListener('pointerup',     up,  { passive: false });
+window.addEventListener('pointercancel', up,  { passive: false });
 
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('retryBtn').addEventListener('click', startGame);
