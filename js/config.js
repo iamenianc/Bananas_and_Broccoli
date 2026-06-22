@@ -44,7 +44,7 @@ const CONFIG = {
   pointsPerBanana:    1,
   penaltyPoints:      1,    // points lost for eating a broccoli
   bananaSwatPenalty:  1,    // points lost for swatting a banana away (NOT a loss)
-  broccoliEatenLimit: 6,    // eating this many broccoli total = game over
+  broccoliEatenLimit: 10,   // eating this many broccoli total = game over
 
   // staggering — try to avoid two real items reaching the baby at the
   // same instant, which is unfair/unreadable. New incoming items get a

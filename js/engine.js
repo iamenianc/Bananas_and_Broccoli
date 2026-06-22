@@ -198,6 +198,14 @@ function resolve(it){
     }
   } else if (it.type === 'banana'){
     if (swatting){
+      if (score === 0) {
+        broccoliEaten++;
+        updateBroccoliHud();
+        if (broccoliEaten >= CONFIG.broccoliEatenLimit) {
+          hudScore.textContent = score;
+          return 'Deflected a banana at 0 points with no lives left.';
+        }
+      }
       score -= CONFIG.bananaSwatPenalty;
       it.flying = true;
       it.peeled = true;
