@@ -113,15 +113,7 @@ function currentSpawnInterval(){
     CONFIG.spawnEveryStart - CONFIG.spawnRampPerSec*elapsed);
 }
 
-function spawnOne(sy, isDecoy){
-  let type;
-  if (barrageTimer > 0) {
-    type = 'broccoli';
-  } else if (!isDecoy && Math.random() < CONFIG.powerupChance){
-    type = 'powerup';
-  } else {
-    type = Math.random() < CONFIG.broccoliChance ? 'broccoli' : 'banana';
-  }
+function spawnOne(sy, type, isDecoy){
   const r = CONFIG.itemRadius;
   const target = babyHandPos();
   const sx = VW + r;
@@ -169,15 +161,38 @@ function incomingArrivals(sp){
   return out;
 }
 
+// Pick one of the fixed launch points dedicated to `type`, preferring a
+// point not already used this burst so two items don't stack on the same spot.
+function pickSpawnPoint(type, used){
+  const pts = CONFIG.spawnPoints.filter(p => p.type === type);
+  const free = pts.filter(p => !used.has(p));
+  const pool = free.length ? free : pts;
+  const p = pool[Math.floor(Math.random()*pool.length)];
+  used.add(p);
+  return p;
+}
+
 function spawn(){
-  const band = VH * CONFIG.spawnYJitter;
   const n = CONFIG.burstMin + Math.floor(Math.random()*(CONFIG.burstMax-CONFIG.burstMin+1));
-  // spread the burst's spawn heights across the middle of the screen so
-  // items enter from different points (independent of the baby's anchor).
+  const used = new Set();
   for (let i=0; i<n; i++){
-    const sy = VH/2 + (Math.random()-0.5)*band;
     const isDecoy = Math.random() < CONFIG.decoyChance;
-    spawnOne(sy, isDecoy);
+    // Decide the food type (preserving the banana/broccoli ratio; bananas
+    // occasionally upgrade to the rare power-up), then launch it from a point
+    // DEDICATED to that food. Power-ups ride the banana launchers.
+    let type;
+    if (barrageTimer > 0){
+      type = 'broccoli';
+    } else if (Math.random() < CONFIG.broccoliChance){
+      type = 'broccoli';
+    } else if (!isDecoy && Math.random() < CONFIG.powerupChance){
+      type = 'powerup';
+    } else {
+      type = 'banana';
+    }
+    const baseType = type === 'powerup' ? 'banana' : type;
+    const sy = pickSpawnPoint(baseType, used).yFrac * VH;
+    spawnOne(sy, type, isDecoy);
   }
 }
 

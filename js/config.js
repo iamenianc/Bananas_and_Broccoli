@@ -53,7 +53,16 @@ const CONFIG = {
   babyBobReseedMax: 1.6,    // s: max time before a new random target is picked
   catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
                             // within this many px of its head; else stands neutral
-  spawnYJitter:     0.7,    // items spawn anywhere in middle 70% of height
+  // FOUR fixed launch points on the right edge. Each point is DEDICATED to a
+  // single food type, so a given launch height always throws the same food.
+  // yFrac is the spawn height as a fraction of world height. Two banana and
+  // two broccoli points, interleaved top-to-bottom.
+  spawnPoints: [
+    { yFrac: 0.18, type: 'banana'   },
+    { yFrac: 0.40, type: 'broccoli' },
+    { yFrac: 0.60, type: 'banana'   },
+    { yFrac: 0.82, type: 'broccoli' },
+  ],
   itemRadius:       34,     // collision + draw size
   resolveRadius:    50,     // distance from baby at which an item resolves
 
