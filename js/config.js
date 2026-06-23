@@ -46,8 +46,8 @@ const CONFIG = {
   babyHandDY:       18,     // px below head center where items are caught
   // gentle idle motion: the baby drifts up/down a few px at random about its
   // centred origin (eases toward a fresh random target every reseed interval).
-  babyBobAmp:       7,      // px: max drift from the origin
-  babyBobEase:      1.8,    // per-second approach rate toward the current target
+  babyBobAmp:       16,     // px: max drift from the origin
+  babyBobEase:      2.2,    // per-second approach rate toward the current target
   babyBobReseedMin: 0.7,    // s: min time before a new random target is picked
   babyBobReseedMax: 1.6,    // s: max time before a new random target is picked
   catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
