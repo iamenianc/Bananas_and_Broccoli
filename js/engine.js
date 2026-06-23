@@ -43,9 +43,8 @@ let spawnTimer = 0;
 let holding = false;     // finger down = swatting
 let swatHoldTimer = 0;   // tolerance buffer for taps
 let broccoliEaten = 0;   // counts toward the lose condition
-let happyTimer   = 0;    // >0 while baby shows the eating-banana face
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
-let powerupTimer = 0;    // >0 while double-score / no-broccoli-penalty buff is active
+let powerupTimer = 0;    // >0 while power-up buff is active (baby shows the eat face)
 let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
 let barrageTimer = 0;    // >0 while barrage is active
 let timeSinceLastBarrage = 50; // seconds since last barrage ended
@@ -57,7 +56,7 @@ let babyBobReseed = 0;   // seconds until a new random drift target is picked
 
 function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
-  holding = false; swatHoldTimer = 0; broccoliEaten = 0; happyTimer = 0; yuckTimer = 0; powerupTimer = 0;
+  holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   bananaStreak = 0;
   barrageTimer = 0;
   lastBroccoliEaten = 0;
@@ -206,7 +205,6 @@ function resolve(it){
         broccoliEaten--;
         updateBroccoliHud();
       }
-      happyTimer = CONFIG.happyFaceTime;
     }
   } else if (it.type === 'banana'){
     if (swatting){
@@ -226,7 +224,6 @@ function resolve(it){
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
-      happyTimer = CONFIG.happyFaceTime;
       // build toward the streak reward (only while not already powered up)
       if (powerupTimer <= 0 && ++bananaStreak >= CONFIG.streakForPowerup){
         powerupTimer = CONFIG.powerupDuration;
@@ -386,7 +383,6 @@ function update(dt){
         ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
         : swatting ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
-  if (happyTimer   > 0) happyTimer   -= dt;
   if (yuckTimer    > 0) yuckTimer    -= dt;
   if (powerupTimer > 0) powerupTimer -= dt;
 }
@@ -429,8 +425,9 @@ function render(){
   }
   const swatting = holding || swatHoldTimer > 0;
   let face;
-  if (swatting)            face = 'swat';
-  else if (happyTimer > 0) face = 'eating';
+  // The eat face is reserved for the power-up: it shows for the whole buff.
+  if (powerupTimer > 0)    face = 'eating';
+  else if (swatting)       face = 'swat';
   else if (yuckTimer  > 0) face = 'yuck';
   else {
     // lunge into the 'catch' pose as a real item closes in; otherwise the
@@ -478,7 +475,6 @@ function down(e){
   if(state===State.PLAY){
     holding=true;
     swatHoldTimer = CONFIG.swatHoldDuration;
-    happyTimer = 0;
     yuckTimer = 0;
   }
   e.preventDefault();
