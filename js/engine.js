@@ -487,7 +487,13 @@ window.addEventListener('pointercancel', up,  { passive: false });
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('retryBtn').addEventListener('click', startGame);
 
-/* register service worker if available (PWA) */
+/* TESTING MODE: caching is disabled so every refresh loads fresh from the
+   server. Unregister any previously-installed service worker and clear all
+   caches. (Re-enable PWA caching after testing.) */
 if ('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.getRegistrations()
+    .then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
+}
+if (window.caches){
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
 }
