@@ -97,8 +97,8 @@ const CONFIG = {
   swatHoldDuration: 0.18,   // seconds the swat remains active for tapped timing tolerance
 
   // power-up: a rare sparkling disco ball — catching it doubles banana points,
-  // makes broccoli harmless, triples item speed, and doubles the baby's size
-  // for powerupDuration seconds. Deliberately rare.
+  // makes broccoli score points just like a banana, triples item speed, and
+  // doubles the baby's size for powerupDuration seconds. Deliberately rare.
   powerupChance:    0.02,   // fraction of real-item spawns that become powerups
   powerupDuration:  10,      // seconds the buff lasts
   powerupSpinRate:  3,      // rad/sec the disco ball spins while incoming

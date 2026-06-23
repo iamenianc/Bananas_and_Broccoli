@@ -289,7 +289,8 @@ function resolve(it){
     if (!swatting){
       it.resolved = true;
       if (powerupTimer > 0){
-        // powered up: broccoli is harmless
+        // powered up: broccoli scores just like a banana (doubled)
+        score += CONFIG.pointsPerBanana * 2;
       } else {
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
