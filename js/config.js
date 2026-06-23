@@ -12,20 +12,23 @@ const CONFIG = {
   // (letterboxed) — relative positions of every object stay identical.
   // 16:9 landscape. Desktop renders this fixed world scaled to the window;
   // phones scale it to fill the display.
-  worldW:           1280,
+  worldW:           1560,
   worldH:           720,
 
   // world — items now TRAVEL horizontally from the right edge toward the baby
-  baseSpeed:        450,    // px/sec along the aim line, at start (increased from 300)
-  maxSpeed:         1200,   // hard ceiling the speed curve eases toward
-  // Difficulty ramps on a CURVE, not a straight line: speed eases toward
-  // maxSpeed asymptotically, so acceleration is brisk early and drops off as
-  // the speed climbs (the punishing high speeds creep in slowly). Smaller tau
-  // = faster ramp. speed(t) = maxSpeed - (maxSpeed-baseSpeed)*e^(-t/tau).
-  speedCurveTau:    20,     // seconds: time-constant of the speed ramp curve
-  spawnEveryStart:  0.70,   // seconds between spawn BURSTS at start (decreased from 1.05)
-  spawnEveryMin:    0.28,   // fastest spawn interval (decreased from 0.42)
-  spawnRampPerSec:  0.012,  // how fast spawn interval tightens
+  baseSpeed:        450,    // px/sec along the aim line; the speed during cycle 1
+  maxSpeed:         1200,   // hard ceiling the per-cycle speed curve eases toward
+  // Difficulty progresses by CYCLE, not by elapsed time: speed is CONSTANT
+  // within a cycle and only steps up when the player completes one (reaches
+  // pointsPerCycle). Each step eases toward maxSpeed on a curve, so the
+  // increments shrink as the speed climbs. Smaller tau = bigger early jumps.
+  // speed(cycle) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(cycle-1)/tau).
+  cycleSpeedTau:    5,      // cycles: time-constant of the per-cycle speed curve
+  pointsPerCycle:   100,    // points that complete a cycle; reaching it resets the
+                            // score to 1 and advances to the next (faster) cycle
+  spawnEveryStart:  0.70,   // seconds between spawn BURSTS during cycle 1
+  spawnEveryMin:    0.28,   // fastest spawn interval (reached at high cycles)
+  spawnRampPerCycle: 0.04,  // how much the spawn interval tightens each cycle
   broccoliChance:   0.333,  // fraction of spawns that are broccoli
                             // (=> 25% more bananas than broccoli: 0.556 vs 0.444)
 

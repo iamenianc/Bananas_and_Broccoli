@@ -11,6 +11,7 @@ const hudScore = document.getElementById('score');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
 const hudPower = document.getElementById('power');
+const hudCycle = document.getElementById('cycle');
 
 // The game is drawn in the FIXED virtual world (CONFIG.worldW x worldH).
 // On resize we only recompute how that fixed world is scaled & centered to
@@ -39,7 +40,8 @@ let state = State.MENU;
 
 let items = [];          // {x,y,vy,type:'banana'|'broccoli',r,resolved}
 let score = 0;
-let elapsed = 0;         // seconds alive
+let cycle = 1;           // difficulty cycle; advances each time score hits pointsPerCycle
+let elapsed = 0;         // seconds alive (animation only; difficulty is cycle-based)
 let spawnTimer = 0;
 let holding = false;     // finger down = swatting
 let swatHoldTimer = 0;   // tolerance buffer for taps
@@ -59,7 +61,7 @@ let babyBobTarget = 0;   // drift target the offset is easing toward
 let babyBobReseed = 0;   // seconds until a new random drift target is picked
 
 function reset(){
-  items = []; score = 0; elapsed = 0; spawnTimer = 0;
+  items = []; score = 0; cycle = 1; elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   charging = false; chargeTimer = 0;
   barrageTimer = 0;
@@ -69,6 +71,12 @@ function reset(){
   hudScore.textContent = '0';
   updateBroccoliHud();
   updatePowerMeter();
+  updateCycleHud();
+}
+
+// Show which difficulty cycle we're on in the corner.
+function updateCycleHud(){
+  if (hudCycle) hudCycle.textContent = 'CYCLE ' + cycle;
 }
 
 // ---- power-up charge: catch the disco ball, then survive powerupChargeTime
@@ -140,10 +148,10 @@ function babyHandPos(){
 }
 
 function currentSpeed(){
-  // Curved ramp: ease toward maxSpeed asymptotically so acceleration is brisk
-  // at the start and tapers off as the (very hard) high speeds approach.
+  // Speed is CONSTANT within a cycle and steps up each cycle on a curve that
+  // eases toward maxSpeed, so the per-cycle jumps shrink as the speed climbs.
   let base = CONFIG.maxSpeed -
-    (CONFIG.maxSpeed - CONFIG.baseSpeed) * Math.exp(-elapsed / CONFIG.speedCurveTau);
+    (CONFIG.maxSpeed - CONFIG.baseSpeed) * Math.exp(-(cycle - 1) / CONFIG.cycleSpeedTau);
   if (barrageTimer > 0) {
     base *= CONFIG.barrageSpeedMult;
   }
@@ -154,7 +162,7 @@ function currentSpawnInterval(){
     return CONFIG.barrageSpawnEvery;
   }
   let interval = Math.max(CONFIG.spawnEveryMin,
-    CONFIG.spawnEveryStart - CONFIG.spawnRampPerSec*elapsed);
+    CONFIG.spawnEveryStart - CONFIG.spawnRampPerCycle*(cycle - 1));
   // during the buff, items fly powerupSpeedMult× faster, so spawn them that
   // much more often to keep the screen density rising in line with the speed.
   if (powerupTimer > 0) interval /= CONFIG.powerupSpeedMult;
@@ -314,6 +322,13 @@ function resolve(it){
     }
   }
   if (score < 0) score = 0;
+  // Completing a cycle (reaching pointsPerCycle) advances the difficulty and
+  // resets the counter to 1; this repeats forever, each cycle a step faster.
+  if (score >= CONFIG.pointsPerCycle){
+    cycle++;
+    score = 1;
+    updateCycleHud();
+  }
   hudScore.textContent = score;
   return null;
 }

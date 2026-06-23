@@ -126,3 +126,12 @@ html, body {
 }
 .rotate-icon { font-size:64px; margin-bottom:16px; animation:rock 1.6s ease-in-out infinite; }
 @keyframes rock { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
+
+/* Difficulty cycle readout — pinned in the bottom-left corner */
+#cycle {
+  position:fixed;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  left:calc(18px + env(safe-area-inset-left));
+  font-size:clamp(14px,2.4vw,20px); font-weight:bold; letter-spacing:1px;
+  opacity:.7; z-index:5; pointer-events:none;
+}
