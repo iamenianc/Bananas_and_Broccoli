@@ -101,6 +101,10 @@ const CONFIG = {
   powerupSpeedMult: 3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active
   streakForPowerup: 20,     // consecutive bananas caught that triggers the buff
+  // SECOND way to earn the buff: eat a pink banana, then survive this many
+  // seconds with NO loss of energy (no broccoli eaten) and NO loss of points.
+  // A meter fills one segment per second; complete it and the buff activates.
+  powerupChargeTime: 10,    // seconds of clean play after a pink banana
 
   // barrage: a terrifying barrage of broccoli only that is fast and furious.
   barrageMinCooldown: 50,   // seconds minimum between barrages

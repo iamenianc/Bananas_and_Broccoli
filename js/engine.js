@@ -10,6 +10,7 @@ const ctx = canvas.getContext('2d');
 const hudScore = document.getElementById('score');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
+const hudPower = document.getElementById('power');
 
 // The game is drawn in the FIXED virtual world (CONFIG.worldW x worldH).
 // On resize we only recompute how that fixed world is scaled & centered to
@@ -46,6 +47,10 @@ let broccoliEaten = 0;   // counts toward the lose condition
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
 let powerupTimer = 0;    // >0 while power-up buff is active (baby shows the eat face)
 let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
+let charging = false;    // true while charging the buff after eating a pink banana
+let chargeTimer = 0;     // seconds of clean play accumulated toward the buff
+let lastPowerFilled = -1;// last segment count rendered in the power meter
+let powerVisible = false;// last visibility state of the power meter
 let barrageTimer = 0;    // >0 while barrage is active
 let timeSinceLastBarrage = 50; // seconds since last barrage ended
 let lastBroccoliEaten = 0; // tracking for HUD flash checks
@@ -58,12 +63,52 @@ function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   bananaStreak = 0;
+  charging = false; chargeTimer = 0;
   barrageTimer = 0;
   lastBroccoliEaten = 0;
   timeSinceLastBarrage = 50;
   babyBobY = 0; babyBobTarget = 0; babyBobReseed = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
+  updatePowerMeter();
+}
+
+// ---- power-up charge: eat a pink banana, then survive powerupChargeTime
+// seconds with no energy loss (broccoli eaten) and no points loss. The meter
+// fills one segment per second; any loss cancels the attempt.
+function startCharge(){
+  if (powerupTimer > 0 || charging) return;   // not while already buffed / charging
+  charging = true; chargeTimer = 0;
+  updatePowerMeter();
+}
+function loseCharge(){
+  if (!charging) return;
+  charging = false; chargeTimer = 0;
+  updatePowerMeter();
+}
+function activatePowerup(){
+  powerupTimer = CONFIG.powerupDuration;
+  bananaStreak = 0;
+  charging = false; chargeTimer = 0;
+  updatePowerMeter();
+}
+
+// Render the charge meter: one segment per second of powerupChargeTime, the
+// elapsed seconds lit. Hidden entirely unless a charge is in progress.
+function updatePowerMeter(){
+  if (charging !== powerVisible){
+    hudPower.classList.toggle('show', charging);
+    powerVisible = charging;
+    if (!charging){ hudPower.innerHTML = ''; lastPowerFilled = -1; }
+  }
+  if (!charging) return;
+  const total = Math.round(CONFIG.powerupChargeTime);
+  const filled = Math.max(0, Math.min(total, Math.floor(chargeTimer)));
+  if (filled === lastPowerFilled) return;
+  lastPowerFilled = filled;
+  let html = '';
+  for (let i=0; i<total; i++) html += '<span class="p' + (i<filled?' on':'') + '"></span>';
+  hudPower.innerHTML = html;
 }
 
 // Render lives as a row of hearts — one per allowed broccoli. Each broccoli
@@ -220,6 +265,7 @@ function resolve(it){
         broccoliEaten--;
         updateBroccoliHud();
       }
+      startCharge();                    // begin the survive-10s charge attempt
     }
   } else if (it.type === 'banana'){
     if (swatting){
@@ -235,14 +281,14 @@ function resolve(it){
       it.flying = true;
       it.peeled = true;
       bananaStreak = 0;                 // rejecting a banana breaks the streak
+      loseCharge();                     // losing points cancels the charge
       ricochet(it);
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
       // build toward the streak reward (only while not already powered up)
       if (powerupTimer <= 0 && ++bananaStreak >= CONFIG.streakForPowerup){
-        powerupTimer = CONFIG.powerupDuration;
-        bananaStreak = 0;
+        activatePowerup();
       }
     }
   } else { // broccoli
@@ -254,6 +300,7 @@ function resolve(it){
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
         bananaStreak = 0;               // eating broccoli breaks the streak
+        loseCharge();                   // losing energy cancels the charge
         yuckTimer = CONFIG.yuckFaceTime;
         updateBroccoliHud();
         if (broccoliEaten >= CONFIG.broccoliEatenLimit){
@@ -390,13 +437,23 @@ function update(dt){
     !it.resolved &&
     it.x > -120 && it.x < VW+120 && it.y > -120 && it.y < VH+120
   );
+  // charge the buff: each clean second adds a meter segment; any loss of
+  // energy/points elsewhere calls loseCharge() and cancels the attempt.
+  if (charging){
+    chargeTimer += dt;
+    if (chargeTimer >= CONFIG.powerupChargeTime) activatePowerup();
+    updatePowerMeter();
+  }
   const modeLabel = barrageTimer > 0
     ? '⚠️ BARRAGE!'
     : powerupTimer > 0
       ? '★ ' + Math.ceil(powerupTimer) + 's'
-      : bananaStreak > 0
-        ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
-        : swatting ? 'SWATTING' : 'CATCHING';
+      : charging
+        ? '⚡ ' + Math.min(Math.round(CONFIG.powerupChargeTime), Math.floor(chargeTimer))
+            + '/' + Math.round(CONFIG.powerupChargeTime)
+        : bananaStreak > 0
+          ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
+          : swatting ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (yuckTimer    > 0) yuckTimer    -= dt;
   if (powerupTimer > 0) powerupTimer -= dt;
@@ -480,6 +537,7 @@ function startGame(){
 }
 function gameOver(reason){
   state = State.OVER;
+  loseCharge();                         // hide the charge meter
   document.getElementById('finalScore').textContent = 'Score: ' + score;
   document.getElementById('goReason').textContent = reason;
   document.getElementById('gameover').classList.remove('hidden');

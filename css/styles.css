@@ -81,6 +81,26 @@ html, body {
 }
 #mode  { opacity:.55; font-size:14px; }
 
+/* Power-up charge meter — appears only while charging (after a pink banana),
+   gaining one segment per clean second toward the buff. */
+#power {
+  position:fixed; left:50%; transform:translateX(-50%);
+  top:calc(46px + env(safe-area-inset-top));
+  display:none; gap:3px; align-items:stretch;
+  border:3px solid #000; background:#fff; padding:3px;
+  width:240px; height:18px; z-index:6; pointer-events:none;
+}
+#power.show { display:flex; }
+#power::before {
+  content:"★"; position:absolute; left:-22px; top:50%;
+  transform:translateY(-50%); font-size:16px; color:#f5a623;
+}
+#power .p {
+  flex:1; background:#000; opacity:.15;
+  transition:opacity .15s, background-color .15s;
+}
+#power .p.on { opacity:1; background:#f5a623; } /* amber fill */
+
 /* Overlay screens (start / gameover / rotate) */
 .overlay {
   position:fixed; inset:0; z-index:10;
