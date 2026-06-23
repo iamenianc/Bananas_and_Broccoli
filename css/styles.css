@@ -7,7 +7,7 @@
 html, body {
   width:100%; height:100%; overflow:hidden;
   /* backdrop behind the letterboxed playfield (visible as margins on
-     screens whose aspect ratio differs from the 16:9 game world) */
+     screens whose aspect ratio differs from the 19.5:9 game world) */
   background:#ececec; color:#000;
   font-family: ui-monospace, "Courier New", monospace;
   touch-action:none; user-select:none; -webkit-user-select:none;

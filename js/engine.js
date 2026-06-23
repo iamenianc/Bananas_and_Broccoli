@@ -38,7 +38,7 @@ resize();
 const State = { MENU:'menu', PLAY:'play', OVER:'over' };
 let state = State.MENU;
 
-let items = [];          // {x,y,vy,type:'banana'|'broccoli',r,resolved}
+let items = [];          // {x,y,vx,vy,ux,uy,r,type:'banana'|'broccoli'|'powerup',resolved,...}
 let score = 0;
 let cycle = 1;           // difficulty cycle; advances each time score hits pointsPerCycle
 let elapsed = 0;         // seconds alive (animation only; difficulty is cycle-based)
@@ -116,8 +116,8 @@ function updatePowerMeter(){
   hudPower.innerHTML = html;
 }
 
-// Render lives as a row of hearts — one per allowed broccoli. Each broccoli
-// eaten loses a heart; the row empties from the right as lives are spent.
+// Render lives as a row of segments — one per allowed broccoli. Each broccoli
+// eaten dims a segment; the row empties from the right as lives are spent.
 function updateBroccoliHud(){
   let html = '';
   for (let i=0; i<CONFIG.broccoliEatenLimit; i++){
@@ -371,7 +371,7 @@ function update(dt){
     if (it.resolved) continue;
 
     if (it.flying){
-      // swatted broccoli: travels on its own velocity, spinning, no re-resolve
+      // swatted/rejected item: travels on its own velocity, spinning, no re-resolve
       it.x += it.vx * dt;
       it.y += it.vy * dt;
       it.rot += it.spin * dt;
@@ -478,8 +478,8 @@ function render(){
   // map drawing into the fixed virtual world: scaled & centered to fit.
   ctx.setTransform(scale*DPR,0,0,scale*DPR, offX*DPR, offY*DPR);
   ctx.save();
-  // clip to the playfield so off-screen spawns / spoon handles and the
-  // letterbox margins stay clean.
+  // clip to the playfield so off-screen spawns and the letterbox margins
+  // stay clean.
   ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
   ART.background(ctx, VW, VH, elapsed);
   // power-up party: disco lights wash over the world while the buff is active,

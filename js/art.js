@@ -1,10 +1,11 @@
 /* ============================================================
    BANANAS & BROCCOLI — ART
    ------------------------------------------------------------
-   Pure drawing functions. Hand-drawn black-on-white, no effects.
-   Replace any function here to restyle without touching engine
-   logic. Reads fills from the global CONFIG (config.js must load
-   first). Exposed as a global `ART` for engine.js.
+   Pure drawing functions: full-colour sprites for the food and
+   baby, a parallax scrolling background, and the lit disco-ball
+   power-up plus the disco light show. Replace any function here
+   to restyle without touching engine logic. Reads from the global
+   CONFIG (config.js must load first); exposed as `ART` for engine.js.
    ============================================================ */
 // Preloaded sprite images (full-colour illustrations). They start loading
 // immediately; until ready, ART.sprite() simply skips drawing that frame.

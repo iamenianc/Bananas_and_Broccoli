@@ -10,12 +10,12 @@ const CONFIG = {
   // expressed in these coordinates and never change, so resizing the
   // browser only uniformly scales the world to fit the screen
   // (letterboxed) — relative positions of every object stay identical.
-  // 16:9 landscape. Desktop renders this fixed world scaled to the window;
-  // phones scale it to fill the display.
+  // 19.5:9 landscape (1560×720). Desktop renders this fixed world scaled to
+  // the window; phones scale it to fill the display.
   worldW:           1560,
   worldH:           720,
 
-  // world — items now TRAVEL horizontally from the right edge toward the baby
+  // world — items TRAVEL horizontally from the right edge toward the baby
   baseSpeed:        450,    // px/sec along the aim line; the speed during cycle 1
   maxSpeed:         1200,   // hard ceiling the per-cycle speed curve eases toward
   // Difficulty progresses by CYCLE, not by elapsed time: speed is CONSTANT
@@ -30,10 +30,10 @@ const CONFIG = {
   spawnEveryMin:    0.28,   // fastest spawn interval (reached at high cycles)
   spawnRampPerCycle: 0.04,  // how much the spawn interval tightens each cycle
   broccoliChance:   0.333,  // fraction of spawns that are broccoli
-                            // (=> 25% more bananas than broccoli: 0.556 vs 0.444)
+                            // (the rest are bananas, so ≈ 2× as many bananas)
 
-  // each spawn is a BURST of 1-3 items thrown together. Some are decoys
-  // aimed to MISS the baby (fly past above/below) — visual noise the
+  // each spawn is a BURST of burstMin–burstMax items thrown together. Some are
+  // decoys aimed to MISS the baby (fly past above/below) — visual noise the
   // player must read past.
   burstMin:         2,      // min items per burst
   burstMax:         3,      // max items per burst
@@ -88,22 +88,26 @@ const CONFIG = {
   maxArrivalDelay:  0.9,    // never hold an item back longer than this
 
   // RULES (single source of truth, mirrored in resolve()):
-  //  - Banana + released (catching) => +point
-  //  - Banana + holding  (rejecting) => -3 points, banana flies off half-peeled
-  //  - Broccoli + holding (swatting) => safe, swatted away (good)
-  //  - Broccoli + released (eaten)   => -1 point, and counts toward the
-  //                                     6-broccoli lose condition
+  //  - Banana    + released (catching)  => +pointsPerBanana (×2 while powered up)
+  //  - Banana    + holding  (rejecting) => -bananaSwatPenalty; banana flies off
+  //                                        half-peeled (and costs a life at 0 pts)
+  //  - Broccoli  + holding  (swatting)  => safe, swatted away (good)
+  //  - Broccoli  + released (eaten)     => costs a life toward broccoliEatenLimit
+  //                                        (but scores like a banana while powered up)
+  //  - Disco ball+ released (caught)    => refunds a life and begins the power-up
+  //                                        charge (survive powerupChargeTime clean)
 
   // feel
   swatNudge:        0,      // optional extra speed when swatting (0 = off)
   yuckFaceTime:     0.55,   // seconds the baby looks disgusted after eating broccoli
   swatHoldDuration: 0.18,   // seconds the swat remains active for tapped timing tolerance
 
-  // power-up: a rare sparkling disco ball — catching it doubles banana points,
-  // makes broccoli score points just like a banana, triples item speed, and
-  // doubles the baby's size for powerupDuration seconds. Deliberately rare.
+  // power-up: a rare sparkling disco ball — while the buff is active it doubles
+  // banana points, makes broccoli score like a banana, triples item speed (and
+  // spawn rate to match), doubles the baby's size, and throws a disco. Lasts
+  // powerupDuration seconds. Deliberately rare.
   powerupChance:    0.02,   // fraction of real-item spawns that become powerups
-  powerupDuration:  10,      // seconds the buff lasts
+  powerupDuration:  10,     // seconds the buff lasts
   powerupSpinRate:  3,      // rad/sec the disco ball spins while incoming
   powerupSpeedMult: 3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active
@@ -115,11 +119,11 @@ const CONFIG = {
   // barrage: a terrifying barrage of broccoli only that is fast and furious.
   barrageMinCooldown: 50,   // seconds minimum between barrages
   barrageDuration:    6,    // seconds the barrage lasts
-  barrageSpawnEvery:  0.12, // spawn interval during barrage (decreased from 0.18)
+  barrageSpawnEvery:  0.12, // spawn interval during a barrage (very rapid fire)
   barrageSpeedMult:   1.7,  // speed multiplier for barrage items
   barrageChancePerSec: 0.08, // chance per second to trigger barrage after cooldown
 
-  // sprite sizing — food/spoon are drawn from PNG illustrations in assets/.
+  // sprite sizing — food is drawn from illustrations in assets/.
   // foodSpriteScale: longest side of a food sprite = itemRadius * this.
   foodSpriteScale:  2.8,
 
@@ -130,6 +134,4 @@ const CONFIG = {
   // swatted item ricochet (broccoli swatted away, or banana rejected)
   swatBackSpeed:    520,    // px/sec launch speed of a swatted item
   swatSpinMax:      12,     // max rad/sec spin while flying off
-
-
 };
