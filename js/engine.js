@@ -46,7 +46,6 @@ let swatHoldTimer = 0;   // tolerance buffer for taps
 let broccoliEaten = 0;   // counts toward the lose condition
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
 let powerupTimer = 0;    // >0 while power-up buff is active (baby shows the eat face)
-let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
 let charging = false;    // true while charging the buff after catching the disco ball
 let chargeTimer = 0;     // seconds of clean play accumulated toward the buff
 let lastPowerFilled = -1;// last segment count rendered in the power meter
@@ -62,7 +61,6 @@ let babyBobReseed = 0;   // seconds until a new random drift target is picked
 function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
-  bananaStreak = 0;
   charging = false; chargeTimer = 0;
   barrageTimer = 0;
   lastBroccoliEaten = 0;
@@ -88,7 +86,6 @@ function loseCharge(){
 }
 function activatePowerup(){
   powerupTimer = CONFIG.powerupDuration;
-  bananaStreak = 0;
   charging = false; chargeTimer = 0;
   updatePowerMeter();
 }
@@ -143,8 +140,10 @@ function babyHandPos(){
 }
 
 function currentSpeed(){
-  let base = Math.min(CONFIG.maxSpeed,
-    CONFIG.baseSpeed + CONFIG.accelPerSec*elapsed);
+  // Curved ramp: ease toward maxSpeed asymptotically so acceleration is brisk
+  // at the start and tapers off as the (very hard) high speeds approach.
+  let base = CONFIG.maxSpeed -
+    (CONFIG.maxSpeed - CONFIG.baseSpeed) * Math.exp(-elapsed / CONFIG.speedCurveTau);
   if (barrageTimer > 0) {
     base *= CONFIG.barrageSpeedMult;
   }
@@ -265,7 +264,7 @@ function resolve(it){
         broccoliEaten--;
         updateBroccoliHud();
       }
-      startCharge();                    // begin the survive-10s charge attempt
+      startCharge();                    // begin the clean-play charge attempt
     }
   } else if (it.type === 'banana'){
     if (swatting){
@@ -280,16 +279,11 @@ function resolve(it){
       score -= CONFIG.bananaSwatPenalty;
       it.flying = true;
       it.peeled = true;
-      bananaStreak = 0;                 // rejecting a banana breaks the streak
       loseCharge();                     // losing points cancels the charge
       ricochet(it);
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
-      // build toward the streak reward (only while not already powered up)
-      if (powerupTimer <= 0 && ++bananaStreak >= CONFIG.streakForPowerup){
-        activatePowerup();
-      }
     }
   } else { // broccoli
     if (!swatting){
@@ -299,7 +293,6 @@ function resolve(it){
       } else {
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
-        bananaStreak = 0;               // eating broccoli breaks the streak
         loseCharge();                   // losing energy cancels the charge
         yuckTimer = CONFIG.yuckFaceTime;
         updateBroccoliHud();
@@ -451,9 +444,7 @@ function update(dt){
       : charging
         ? '⚡ ' + Math.min(Math.round(CONFIG.powerupChargeTime), Math.floor(chargeTimer))
             + '/' + Math.round(CONFIG.powerupChargeTime)
-        : bananaStreak > 0
-          ? '🍌 ' + bananaStreak + '/' + CONFIG.streakForPowerup
-          : swatting ? 'SWATTING' : 'CATCHING';
+        : swatting ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (yuckTimer    > 0) yuckTimer    -= dt;
   if (powerupTimer > 0) powerupTimer -= dt;
@@ -471,24 +462,28 @@ function render(){
   // letterbox margins stay clean.
   ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
   ART.background(ctx, VW, VH, elapsed);
+  // power-up party: disco lights wash over the world while the buff is active,
+  // easing out over the final second so it doesn't snap off.
+  if (powerupTimer > 0){
+    ART.disco(ctx, VW, VH, elapsed, Math.min(1, powerupTimer));
+  }
 
   const baby = babyPos();
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){
-      ctx.save();
-      ctx.translate(it.x, it.y);
-      ctx.rotate(it.rot || 0);
-      if (it.peeled)             ART.bananaPeeled(ctx, 0, 0, it.r);
-      else if (it.type==='powerup') ART.powerup(ctx, 0, 0, it.r);
-      else                       ART.broccoli(ctx, 0, 0, it.r);
-      ctx.restore();
+      if (it.type==='powerup'){
+        ART.powerup(ctx, it.x, it.y, it.r, it.rot || 0);
+      } else {
+        ctx.save();
+        ctx.translate(it.x, it.y);
+        ctx.rotate(it.rot || 0);
+        if (it.peeled) ART.bananaPeeled(ctx, 0, 0, it.r);
+        else           ART.broccoli(ctx, 0, 0, it.r);
+        ctx.restore();
+      }
     } else if (it.type==='powerup'){
-      ctx.save();
-      ctx.translate(it.x, it.y);
-      ctx.rotate(it.rot || 0);
-      ART.powerup(ctx, 0, 0, it.r);
-      ctx.restore();
+      ART.powerup(ctx, it.x, it.y, it.r, it.rot || 0);
     } else if (it.type==='banana'){
       ART.banana(ctx, it.x, it.y, it.r);
     } else {

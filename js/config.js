@@ -17,8 +17,12 @@ const CONFIG = {
 
   // world — items now TRAVEL horizontally from the right edge toward the baby
   baseSpeed:        450,    // px/sec along the aim line, at start (increased from 300)
-  accelPerSec:      11,     // speed gained each second alive (increased from 11)
-  maxSpeed:         1200,   // increased from 1000
+  maxSpeed:         1200,   // hard ceiling the speed curve eases toward
+  // Difficulty ramps on a CURVE, not a straight line: speed eases toward
+  // maxSpeed asymptotically, so acceleration is brisk early and drops off as
+  // the speed climbs (the punishing high speeds creep in slowly). Smaller tau
+  // = faster ramp. speed(t) = maxSpeed - (maxSpeed-baseSpeed)*e^(-t/tau).
+  speedCurveTau:    20,     // seconds: time-constant of the speed ramp curve
   spawnEveryStart:  0.70,   // seconds between spawn BURSTS at start (decreased from 1.05)
   spawnEveryMin:    0.28,   // fastest spawn interval (decreased from 0.42)
   spawnRampPerSec:  0.012,  // how fast spawn interval tightens
@@ -100,11 +104,10 @@ const CONFIG = {
   powerupSpinRate:  3,      // rad/sec the disco ball spins while incoming
   powerupSpeedMult: 3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active
-  streakForPowerup: 20,     // consecutive bananas caught that triggers the buff
-  // SECOND way to earn the buff: catch the disco ball, then survive this many
+  // The disco ball is the ONLY trigger: catch it, then survive this many
   // seconds with NO loss of energy (no broccoli eaten) and NO loss of points.
   // A meter fills one segment per second; complete it and the buff activates.
-  powerupChargeTime: 10,    // seconds of clean play after the disco ball
+  powerupChargeTime: 7,     // seconds of clean play after the disco ball
 
   // barrage: a terrifying barrage of broccoli only that is fast and furious.
   barrageMinCooldown: 50,   // seconds minimum between barrages

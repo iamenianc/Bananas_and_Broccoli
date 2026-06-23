@@ -191,21 +191,72 @@ const ART = {
     _bgLayer(ctx, w, h, t * 140, h*0.79, 55, '#9ccba6', 6.10);
   },
 
-  // Disco-ball power-up — an SVG mirror-tiled sphere with animated sparkle.
-  // The caller draws this inside a context already rotated by the item's spin,
-  // so the facets turn; on top we add a handful of twinkling glints that flash
-  // like light catching the mirrors.
-  powerup(ctx, x, y, r){
+  // Disco-ball power-up — an SVG mirror-tiled sphere lit with FAUX LIGHTING:
+  // the facets spin (rotated by `rot`), but the shading is light-fixed — a
+  // soft ambient halo, a curved sheen, a bright specular hot-spot up-and-left,
+  // a cool rim light opposite it, and twinkling glints catching the mirrors —
+  // so the ball reads as a glossy 3-D sphere shining under a fixed light.
+  powerup(ctx, x, y, r, rot){
     const size = r * CONFIG.foodSpriteScale;
+    const rad  = size * 0.5;
+    const t = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
     const img = IMG.discoball;
+
+    // ---- light-fixed underlay: ambient glow halo behind the ball
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(0, 0, rad * 0.6, 0, 0, rad * 1.7);
+    const hp = 0.35 + 0.15 * Math.sin(t * 5);          // gentle pulse
+    halo.addColorStop(0, 'rgba(210,240,255,' + hp.toFixed(3) + ')');
+    halo.addColorStop(1, 'rgba(210,240,255,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, rad * 1.7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // ---- the spinning mirror sphere
     if (img.complete && img.naturalWidth){
       const k = size / Math.max(img.naturalWidth, img.naturalHeight);
       const w = img.naturalWidth * k, h = img.naturalHeight * k;
-      ctx.drawImage(img, x - w/2, y - h/2, w, h);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot || 0);
+      ctx.drawImage(img, -w/2, -h/2, w, h);
+      ctx.restore();
     }
-    // sparkle: additive twinkling glints over the surface
-    const t = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
-    const rad = size * 0.5;
+
+    // ---- light-fixed shading (does NOT rotate with the facets)
+    ctx.save();
+    ctx.translate(x, y);
+    // clip to the sphere so highlights wrap the surface, not the air
+    ctx.beginPath(); ctx.arc(0, 0, rad, 0, Math.PI * 2); ctx.clip();
+    ctx.globalCompositeOperation = 'lighter';
+    // broad sheen biased toward the light (upper-left)
+    const lx = -rad * 0.38, ly = -rad * 0.38;
+    const sheen = ctx.createRadialGradient(lx, ly, 0, lx, ly, rad * 1.25);
+    sheen.addColorStop(0,   'rgba(255,255,255,0.55)');
+    sheen.addColorStop(0.5, 'rgba(220,245,255,0.18)');
+    sheen.addColorStop(1,   'rgba(220,245,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(-rad, -rad, size, size);
+    // tight specular hot-spot that shimmers
+    const hot = 0.7 + 0.3 * Math.sin(t * 9);
+    const spec = ctx.createRadialGradient(lx, ly, 0, lx, ly, rad * 0.32);
+    spec.addColorStop(0, 'rgba(255,255,255,' + (0.95 * hot).toFixed(3) + ')');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = spec;
+    ctx.beginPath(); ctx.arc(lx, ly, rad * 0.32, 0, Math.PI * 2); ctx.fill();
+    // cool rim light on the far (lower-right) edge
+    const rim = ctx.createRadialGradient(rad * 0.55, rad * 0.55, rad * 0.2,
+                                         rad * 0.55, rad * 0.55, rad * 0.9);
+    rim.addColorStop(0, 'rgba(140,200,255,0)');
+    rim.addColorStop(0.75, 'rgba(150,210,255,0.18)');
+    rim.addColorStop(1, 'rgba(190,230,255,0.42)');
+    ctx.fillStyle = rim;
+    ctx.fillRect(-rad, -rad, size, size);
+    ctx.restore();
+
+    // ---- twinkling glints catching individual mirror tiles
     ctx.save();
     ctx.translate(x, y);
     ctx.globalCompositeOperation = 'lighter';
@@ -222,6 +273,61 @@ const ART = {
       g.addColorStop(1,   'rgba(190,235,255,0)');
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(gx, gy, gr, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  },
+
+  // DISCO! Drawn over the world while the power-up buff is active: a hanging
+  // mirror ball spilling rotating coloured light beams across the playfield,
+  // plus a soft pulsing colour wash and scattered twinkling sparkles. `f` is
+  // 0..1 buff fade (used to ease the party in/out at the edges of the buff).
+  disco(ctx, w, h, t, f){
+    f = Math.max(0, Math.min(1, f == null ? 1 : f));
+    if (f <= 0) return;
+    const hues = [0, 45, 120, 195, 280, 320];     // red, amber, green, cyan, violet, pink
+    ctx.save();
+    // rotating light beams fanning down from the top-centre mirror ball
+    const ox = w * 0.5, oy = -h * 0.06;
+    const beams = hues.length;
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < beams; i++){
+      const ang = t * 0.6 + (i / beams) * Math.PI * 2;       // sweep
+      const spread = 0.16;
+      const a1 = ang - spread, a2 = ang + spread;
+      const reach = Math.hypot(w, h) * 1.2;
+      const x1 = ox + Math.cos(a1) * reach, y1 = oy + Math.sin(a1) * reach;
+      const x2 = ox + Math.cos(a2) * reach, y2 = oy + Math.sin(a2) * reach;
+      const flick = 0.12 + 0.10 * (0.5 + 0.5 * Math.sin(t * 4 + i * 1.7));
+      const hue = hues[i % hues.length];
+      const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, reach);
+      g.addColorStop(0,   'hsla(' + hue + ',100%,65%,' + (flick * f).toFixed(3) + ')');
+      g.addColorStop(0.6, 'hsla(' + hue + ',100%,60%,' + (flick * 0.5 * f).toFixed(3) + ')');
+      g.addColorStop(1,   'hsla(' + hue + ',100%,60%,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // gentle full-screen colour wash cycling through the hues
+    const washHue = (t * 80) % 360;
+    ctx.fillStyle = 'hsla(' + washHue + ',90%,60%,' + (0.10 * f).toFixed(3) + ')';
+    ctx.fillRect(0, 0, w, h);
+    // scattered twinkling floor sparkles
+    const sparks = 22;
+    for (let i = 0; i < sparks; i++){
+      const sx = ((i * 73.13) % 1) * w;
+      const sy = (0.35 + 0.6 * ((i * 39.7) % 1)) * h;
+      const tw = 0.5 + 0.5 * Math.sin(t * 7 + i * 2.3);
+      const sr = (3 + 5 * tw) * (0.6 + 0.4 * f);
+      const hue = hues[i % hues.length];
+      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
+      g.addColorStop(0, 'hsla(' + hue + ',100%,85%,' + (0.9 * tw * f).toFixed(3) + ')');
+      g.addColorStop(1, 'hsla(' + hue + ',100%,85%,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
   },
