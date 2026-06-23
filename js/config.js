@@ -38,9 +38,10 @@ const CONFIG = {
   // its HEAD center at (babyHeadX, babyHeadY); incoming items resolve at the
   // baby's reaching hand, (babyHeadX+babyHandDX, babyHeadY+babyHandDY).
   babyHeadX:        180,    // px: on-screen x of the baby's head center
-  babyHeadY:        315,    // px: head-center y — chosen so the whole figure
-                            // sits vertically centred on screen (it extends
-                            // ~45px below the head center at this scale)
+  babyHeadY:        315,    // px: vertical anchor; each pose's figure center is
+                            // placed babyFigCenter below this, so the figure
+                            // sits centred on screen (315+45 = 360 = VH/2)
+  babyFigCenter:    45,     // px the figure center sits below the anchor y
   babyHeadPx:       108,    // target on-screen head height (uniform across poses)
   babyHandDX:       64,     // px right of head center where items are caught
   babyHandDY:       18,     // px below head center where items are caught

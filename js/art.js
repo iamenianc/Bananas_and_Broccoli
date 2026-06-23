@@ -65,16 +65,18 @@ function _cloud(ctx, cx, cy, size, color){
 }
 
 // Per-pose anchor metrics in each sprite's own natural-pixel coordinates:
-// the head bounding-box center (hcx,hcy) and head height (headH). Every pose
-// is drawn so its head appears at a uniform on-screen size
-// (CONFIG.babyHeadPx) with the head center pinned to the anchor point — this
-// keeps all five poses the same scale despite differing source resolutions.
+// the head bounding-box center (hcx,hcy), head height (headH), and figure
+// vertical center (fcy). Every pose is drawn at a uniform on-screen head
+// size (CONFIG.babyHeadPx); horizontally the head center is pinned to the
+// anchor x, and vertically the figure center (fcy) is placed a uniform
+// distance (CONFIG.babyFigCenter) below the anchor y — so poses with more
+// or less leg in frame all stay vertically centred the same way.
 const BABY_META = {
-  catch:   { hcx:178.5, hcy:153.0, headH:294 },
-  swat:    { hcx:183.5, hcy:152.5, headH:293 },
-  eating:  { hcx:174.0, hcy:151.0, headH:302 },
-  yuck:    { hcx:158.5, hcy:144.5, headH:277 },
-  neutral: { hcx:170.5, hcy:143.0, headH:286 },
+  catch:   { hcx:178.5, hcy:153.0, headH:294, fcy:274.5 },
+  swat:    { hcx:183.5, hcy:152.5, headH:293, fcy:280.5 },
+  eating:  { hcx:174.0, hcy:151.0, headH:302, fcy:275.5 },
+  yuck:    { hcx:158.5, hcy:144.5, headH:277, fcy:284.5 },
+  neutral: { hcx:164.5, hcy:151.0, headH:302, fcy:306.5 },
 };
 
 const ART = {
@@ -126,10 +128,13 @@ const ART = {
     const meta = BABY_META[face] || BABY_META.neutral;
     if (!img.complete || !img.naturalWidth) return;
     const s = (CONFIG.babyHeadPx / meta.headH) * (scale || 1);  // uniform head size
+    // head center pinned horizontally; figure center placed babyFigCenter
+    // below the anchor y so every pose stays vertically centred the same way.
+    const ox = x - meta.hcx*s;
+    const oy = y + CONFIG.babyFigCenter*(scale || 1) - meta.fcy*s;
     const prev = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = true;                // smooth cartoon edges
-    ctx.drawImage(img, x - meta.hcx*s, y - meta.hcy*s,
-                  img.naturalWidth*s, img.naturalHeight*s);
+    ctx.drawImage(img, ox, oy, img.naturalWidth*s, img.naturalHeight*s);
     ctx.imageSmoothingEnabled = prev;
   },
 
