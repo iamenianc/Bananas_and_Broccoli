@@ -153,8 +153,12 @@ function currentSpawnInterval(){
   if (barrageTimer > 0) {
     return CONFIG.barrageSpawnEvery;
   }
-  return Math.max(CONFIG.spawnEveryMin,
+  let interval = Math.max(CONFIG.spawnEveryMin,
     CONFIG.spawnEveryStart - CONFIG.spawnRampPerSec*elapsed);
+  // during the buff, items fly powerupSpeedMult× faster, so spawn them that
+  // much more often to keep the screen density rising in line with the speed.
+  if (powerupTimer > 0) interval /= CONFIG.powerupSpeedMult;
+  return interval;
 }
 
 function spawnOne(sy, type, isDecoy){
