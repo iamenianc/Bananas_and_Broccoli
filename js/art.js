@@ -70,8 +70,8 @@ function _cloud(ctx, cx, cy, size, color){
 // (CONFIG.babyHeadPx) with the head center pinned to the anchor point — this
 // keeps all five poses the same scale despite differing source resolutions.
 const BABY_META = {
-  catch:   { hcx:183.5, hcy:152.5, headH:293 },
-  swat:    { hcx:178.5, hcy:153.0, headH:294 },
+  catch:   { hcx:178.5, hcy:153.0, headH:294 },
+  swat:    { hcx:183.5, hcy:152.5, headH:293 },
   eating:  { hcx:168.5, hcy:147.5, headH:283 },
   yuck:    { hcx:158.5, hcy:144.5, headH:277 },
   neutral: { hcx:170.5, hcy:143.0, headH:286 },

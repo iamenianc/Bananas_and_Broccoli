@@ -39,9 +39,9 @@ const CONFIG = {
   // baby's reaching hand, (babyHeadX+babyHandDX, babyHeadY+babyHandDY).
   babyHeadX:        180,    // px: on-screen x of the baby's head center
   babyHeadY:        250,    // px: on-screen y of the baby's head center
-  babyHeadPx:       215,    // target on-screen head height (uniform across poses)
-  babyHandDX:       128,    // px right of head center where items are caught
-  babyHandDY:       36,     // px below head center where items are caught
+  babyHeadPx:       108,    // target on-screen head height (uniform across poses)
+  babyHandDX:       64,     // px right of head center where items are caught
+  babyHandDY:       18,     // px below head center where items are caught
   catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
                             // within this many px of its head; else stands neutral
   spawnYJitter:     0.7,    // items spawn anywhere in middle 70% of height
