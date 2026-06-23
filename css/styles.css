@@ -126,7 +126,3 @@ html, body {
 }
 .rotate-icon { font-size:64px; margin-bottom:16px; animation:rock 1.6s ease-in-out infinite; }
 @keyframes rock { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
-
-.hint { position:fixed; bottom:calc(14px + env(safe-area-inset-bottom));
-        left:0; right:0; text-align:center;
-        font-size:13px; opacity:.45; z-index:5; pointer-events:none; }
