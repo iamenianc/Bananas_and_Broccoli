@@ -9,7 +9,7 @@ html, body {
   /* backdrop behind the letterboxed playfield (visible as margins on
      screens whose aspect ratio differs from the 19.5:9 game world) */
   background:#ececec; color:#000;
-  font-family: ui-monospace, "Courier New", monospace;
+  font-family: "Comic Neue", "Comic Sans MS", "Chalkboard SE", cursive;
   touch-action:none; user-select:none; -webkit-user-select:none;
 }
 /* canvas fills the viewport; the white playfield is painted inside it at
@@ -127,8 +127,8 @@ html, body {
 .rotate-icon { font-size:64px; margin-bottom:16px; animation:rock 1.6s ease-in-out infinite; }
 @keyframes rock { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
 
-/* Difficulty cycle readout — pinned in the bottom-left corner */
-#cycle {
+/* Difficulty level readout — pinned in the bottom-left corner */
+#level {
   position:fixed;
   bottom:calc(12px + env(safe-area-inset-bottom));
   left:calc(18px + env(safe-area-inset-left));

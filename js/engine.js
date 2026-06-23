@@ -11,7 +11,7 @@ const hudScore = document.getElementById('score');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
 const hudPower = document.getElementById('power');
-const hudCycle = document.getElementById('cycle');
+const hudLevel = document.getElementById('level');
 
 // The game is drawn in the FIXED virtual world (CONFIG.worldW x worldH).
 // On resize we only recompute how that fixed world is scaled & centered to
@@ -40,8 +40,10 @@ let state = State.MENU;
 
 let items = [];          // {x,y,vx,vy,ux,uy,r,type:'banana'|'broccoli'|'powerup',resolved,...}
 let score = 0;
-let cycle = 1;           // difficulty cycle; advances each time score hits pointsPerCycle
-let elapsed = 0;         // seconds alive (animation only; difficulty is cycle-based)
+let level = 1;           // difficulty level; advances each time score hits pointsPerLevel
+let bananasEaten = 0;    // cumulative bananas caught across ALL levels (loser-screen stat)
+let levelFreezeTimer = 0;// >0 while the game is frozen announcing a fresh level
+let elapsed = 0;         // seconds alive (animation only; difficulty is level-based)
 let spawnTimer = 0;
 let holding = false;     // finger down = swatting
 let swatHoldTimer = 0;   // tolerance buffer for taps
@@ -61,7 +63,8 @@ let babyBobTarget = 0;   // drift target the offset is easing toward
 let babyBobReseed = 0;   // seconds until a new random drift target is picked
 
 function reset(){
-  items = []; score = 0; cycle = 1; elapsed = 0; spawnTimer = 0;
+  items = []; score = 0; level = 1; bananasEaten = 0; levelFreezeTimer = 0;
+  elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   charging = false; chargeTimer = 0;
   barrageTimer = 0;
@@ -71,12 +74,26 @@ function reset(){
   hudScore.textContent = '0';
   updateBroccoliHud();
   updatePowerMeter();
-  updateCycleHud();
+  updateLevelHud();
 }
 
-// Show which difficulty cycle we're on in the corner.
-function updateCycleHud(){
-  if (hudCycle) hudCycle.textContent = 'CYCLE ' + cycle;
+// Show which difficulty level we're on in the corner.
+function updateLevelHud(){
+  if (hudLevel) hudLevel.textContent = 'LEVEL ' + level;
+}
+
+// Advance to the next level: bump difficulty, reset the per-level score to 1,
+// cancel any buff/charge, clear the screen, and freeze briefly to announce it.
+function levelUp(){
+  level++;
+  score = 1;
+  powerupTimer = 0;                 // cancel any active buff
+  charging = false; chargeTimer = 0;// and any charge in progress
+  items = [];                       // clear the screen
+  spawnTimer = 0;                   // burst back in the moment the freeze ends
+  levelFreezeTimer = CONFIG.levelAnnounceTime;
+  updateLevelHud();
+  updatePowerMeter();               // hide the charge meter if it was showing
 }
 
 // ---- power-up charge: catch the disco ball, then survive powerupChargeTime
@@ -148,10 +165,10 @@ function babyHandPos(){
 }
 
 function currentSpeed(){
-  // Speed is CONSTANT within a cycle and steps up each cycle on a curve that
-  // eases toward maxSpeed, so the per-cycle jumps shrink as the speed climbs.
+  // Speed is CONSTANT within a level and steps up each level on a curve that
+  // eases toward maxSpeed, so the per-level jumps shrink as the speed climbs.
   let base = CONFIG.maxSpeed -
-    (CONFIG.maxSpeed - CONFIG.baseSpeed) * Math.exp(-(cycle - 1) / CONFIG.cycleSpeedTau);
+    (CONFIG.maxSpeed - CONFIG.baseSpeed) * Math.exp(-(level - 1) / CONFIG.levelSpeedTau);
   if (barrageTimer > 0) {
     base *= CONFIG.barrageSpeedMult;
   }
@@ -162,7 +179,7 @@ function currentSpawnInterval(){
     return CONFIG.barrageSpawnEvery;
   }
   let interval = Math.max(CONFIG.spawnEveryMin,
-    CONFIG.spawnEveryStart - CONFIG.spawnRampPerCycle*(cycle - 1));
+    CONFIG.spawnEveryStart - CONFIG.spawnRampPerLevel*(level - 1));
   // during the buff, items fly powerupSpeedMult× faster, so spawn them that
   // much more often to keep the screen density rising in line with the speed.
   if (powerupTimer > 0) interval /= CONFIG.powerupSpeedMult;
@@ -296,6 +313,7 @@ function resolve(it){
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
+      bananasEaten++;                   // one banana eaten (cumulative across levels)
     }
   } else { // broccoli
     if (!swatting){
@@ -312,7 +330,7 @@ function resolve(it){
         if (broccoliEaten >= CONFIG.broccoliEatenLimit){
           if (score < 0) score = 0;
           hudScore.textContent = score;
-          return 'You ate ' + CONFIG.broccoliEatenLimit + ' broccoli.';
+          return 'you ate too many broccolis :(';
         }
       }
     } else {
@@ -322,18 +340,21 @@ function resolve(it){
     }
   }
   if (score < 0) score = 0;
-  // Completing a cycle (reaching pointsPerCycle) advances the difficulty and
-  // resets the counter to 1; this repeats forever, each cycle a step faster.
-  if (score >= CONFIG.pointsPerCycle){
-    cycle++;
-    score = 1;
-    updateCycleHud();
+  // Completing a level (reaching pointsPerLevel) advances the difficulty; this
+  // repeats forever, each level a step faster. levelUp() resets the counter.
+  if (score >= CONFIG.pointsPerLevel){
+    levelUp();
   }
   hudScore.textContent = score;
   return null;
 }
 
 function update(dt){
+  // brief freeze while a new level is announced — nothing moves or spawns
+  if (levelFreezeTimer > 0){
+    levelFreezeTimer -= dt;
+    return;
+  }
   elapsed += dt;
 
   // slow random vertical bob: ease toward a fresh random target now and then
@@ -400,6 +421,8 @@ function update(dt){
     if (Math.hypot(it.x - target.x, it.y - target.y) <= CONFIG.resolveRadius){
       const reason = resolve(it);
       if (reason){ gameOver(reason); return; }
+      // a level-up clears the board and freezes the game — stop this frame
+      if (levelFreezeTimer > 0) return;
     }
   }
   // flying banana hitting an incoming broccoli: both tumble off-screen together
@@ -528,6 +551,8 @@ function render(){
   }
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
+  // brief "LEVEL N" banner over the frozen board on each level-up
+  if (levelFreezeTimer > 0) ART.levelAnnounce(ctx, VW, VH, level, levelFreezeTimer);
   ctx.restore();
 }
 
@@ -553,8 +578,9 @@ function startGame(){
 function gameOver(reason){
   state = State.OVER;
   loseCharge();                         // hide the charge meter
-  document.getElementById('finalScore').textContent = 'Score: ' + score;
   document.getElementById('goReason').textContent = reason;
+  document.getElementById('finalStats').textContent =
+    'Level ' + level + ' reached · ' + bananasEaten + ' bananas eaten';
   document.getElementById('gameover').classList.remove('hidden');
 }
 

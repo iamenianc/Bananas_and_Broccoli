@@ -333,6 +333,33 @@ const ART = {
     ctx.restore();
   },
 
+  // Brief "LEVEL N" banner shown over the frozen board when a new level starts.
+  // `timer` counts down from CONFIG.levelAnnounceTime; we pop the text in, hold
+  // it, then fade out over the final moments.
+  levelAnnounce(ctx, w, h, level, timer){
+    const total = CONFIG.levelAnnounceTime || 1;
+    const p = Math.max(0, Math.min(1, 1 - timer / total));   // 0..1 through the freeze
+    const pop = p < 0.5 ? 1 - Math.pow(1 - p * 2, 3) : 1;    // ease-out grow in first half
+    const scale = 0.6 + 0.4 * pop;
+    const alpha = Math.min(1, timer / 0.25);                 // fade out the last 0.25s
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(scale, scale);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 150px "Comic Neue", "Comic Sans MS", cursive';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 14;
+    ctx.strokeStyle = '#000';
+    ctx.strokeText('LEVEL ' + level, 0, 0);
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillText('LEVEL ' + level, 0, 0);
+    ctx.restore();
+  },
+
   catchZone(ctx, x, y, r){
     ART.wobble(ctx, c=>{
       c.setLineDash([10,12]);

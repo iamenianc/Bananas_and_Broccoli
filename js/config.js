@@ -16,19 +16,20 @@ const CONFIG = {
   worldH:           720,
 
   // world — items TRAVEL horizontally from the right edge toward the baby
-  baseSpeed:        450,    // px/sec along the aim line; the speed during cycle 1
-  maxSpeed:         1200,   // hard ceiling the per-cycle speed curve eases toward
-  // Difficulty progresses by CYCLE, not by elapsed time: speed is CONSTANT
-  // within a cycle and only steps up when the player completes one (reaches
-  // pointsPerCycle). Each step eases toward maxSpeed on a curve, so the
+  baseSpeed:        450,    // px/sec along the aim line; the speed during level 1
+  maxSpeed:         1200,   // hard ceiling the per-level speed curve eases toward
+  // Difficulty progresses by LEVEL, not by elapsed time: speed is CONSTANT
+  // within a level and only steps up when the player completes one (reaches
+  // pointsPerLevel). Each step eases toward maxSpeed on a curve, so the
   // increments shrink as the speed climbs. Smaller tau = bigger early jumps.
-  // speed(cycle) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(cycle-1)/tau).
-  cycleSpeedTau:    5,      // cycles: time-constant of the per-cycle speed curve
-  pointsPerCycle:   100,    // points that complete a cycle; reaching it resets the
-                            // score to 1 and advances to the next (faster) cycle
-  spawnEveryStart:  0.70,   // seconds between spawn BURSTS during cycle 1
-  spawnEveryMin:    0.28,   // fastest spawn interval (reached at high cycles)
-  spawnRampPerCycle: 0.04,  // how much the spawn interval tightens each cycle
+  // speed(level) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(level-1)/tau).
+  levelSpeedTau:    5,      // levels: time-constant of the per-level speed curve
+  pointsPerLevel:   100,    // points that complete a level; reaching it resets the
+                            // score to 1 and advances to the next (faster) level
+  levelAnnounceTime: 1.2,   // seconds the game freezes to announce each new level
+  spawnEveryStart:  0.70,   // seconds between spawn BURSTS during level 1
+  spawnEveryMin:    0.28,   // fastest spawn interval (reached at high levels)
+  spawnRampPerLevel: 0.04,  // how much the spawn interval tightens each level
   broccoliChance:   0.333,  // fraction of spawns that are broccoli
                             // (the rest are bananas, so ≈ 2× as many bananas)
 

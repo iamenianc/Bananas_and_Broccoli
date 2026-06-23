@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Bananas & Broccoli</title>
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -20,7 +23,7 @@
     <div id="mode">CATCHING</div>
   </div>
   <div id="power" class="playfield-overlay" aria-label="power-up charge"></div>
-  <div id="cycle" class="playfield-overlay" aria-label="difficulty cycle">CYCLE 1</div>
+  <div id="level" class="playfield-overlay" aria-label="difficulty level">LEVEL 1</div>
 
   <!-- START -->
   <div id="start" class="overlay playfield-overlay">
@@ -34,8 +37,8 @@
   <!-- GAME OVER -->
   <div id="gameover" class="overlay hidden playfield-overlay">
     <h1>OOPS</h1>
-    <div class="big" id="finalScore">Score: 0</div>
-    <p id="goReason">You swatted a banana.</p>
+    <p id="goReason">you ate too many broccolis :(</p>
+    <div class="big" id="finalStats">Level 1 reached · 0 bananas eaten</div>
     <button id="retryBtn" class="btn">AGAIN</button>
   </div>
 
