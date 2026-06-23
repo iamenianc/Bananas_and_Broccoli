@@ -16,7 +16,7 @@ const CONFIG = {
   worldH:           720,
 
   // world — items TRAVEL horizontally from the right edge toward the baby
-  baseSpeed:        450,    // px/sec along the aim line; the speed during level 1
+  baseSpeed:        562.5,  // px/sec along the aim line; the speed during level 1
   maxSpeed:         1200,   // hard ceiling the per-level speed curve eases toward
   // Difficulty progresses by LEVEL, not by elapsed time: speed is CONSTANT
   // within a level and only steps up when the player completes one (reaches
@@ -24,7 +24,7 @@ const CONFIG = {
   // increments shrink as the speed climbs. Smaller tau = bigger early jumps.
   // speed(level) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(level-1)/tau).
   levelSpeedTau:    5,      // levels: time-constant of the per-level speed curve
-  pointsPerLevel:   100,    // points that complete LEVEL 1; reaching the target
+  pointsPerLevel:   80,     // points that complete LEVEL 1; reaching the target
                             // resets the score to 1 and advances to the next
                             // (faster) level. Play is continuous — the field is
                             // knocked down, not frozen — when a level begins.
