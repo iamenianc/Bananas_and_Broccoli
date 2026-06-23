@@ -51,6 +51,9 @@ let barrageTimer = 0;    // >0 while barrage is active
 let timeSinceLastBarrage = 50; // seconds since last barrage ended
 let lastBroccoliEaten = 0; // tracking for HUD flash checks
 let lastT = 0;
+let babyBobY = 0;        // current vertical idle-drift offset (px) about the origin
+let babyBobTarget = 0;   // drift target the offset is easing toward
+let babyBobReseed = 0;   // seconds until a new random drift target is picked
 
 function reset(){
   items = []; score = 0; elapsed = 0; spawnTimer = 0;
@@ -59,6 +62,7 @@ function reset(){
   barrageTimer = 0;
   lastBroccoliEaten = 0;
   timeSinceLastBarrage = 50;
+  babyBobY = 0; babyBobTarget = 0; babyBobReseed = 0;
   hudScore.textContent = '0';
   updateBroccoliHud();
 }
@@ -85,13 +89,13 @@ function updateBroccoliHud(){
 }
 
 function babyPos(){
-  return { x: CONFIG.babyHeadX, y: CONFIG.babyHeadY };
+  return { x: CONFIG.babyHeadX, y: CONFIG.babyHeadY + babyBobY };
 }
 
 function babyHandPos(){
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   return { x: CONFIG.babyHeadX + CONFIG.babyHandDX * babyScale,
-           y: CONFIG.babyHeadY + CONFIG.babyHandDY * babyScale };
+           y: CONFIG.babyHeadY + babyBobY + CONFIG.babyHandDY * babyScale };
 }
 
 function currentSpeed(){
@@ -259,6 +263,15 @@ function resolve(it){
 
 function update(dt){
   elapsed += dt;
+
+  // slow random vertical bob: ease toward a fresh random target now and then
+  babyBobReseed -= dt;
+  if (babyBobReseed <= 0){
+    babyBobTarget = (Math.random()*2 - 1) * CONFIG.babyBobAmp;
+    babyBobReseed = CONFIG.babyBobReseedMin +
+      Math.random()*(CONFIG.babyBobReseedMax - CONFIG.babyBobReseedMin);
+  }
+  babyBobY += (babyBobTarget - babyBobY) * Math.min(1, dt * CONFIG.babyBobEase);
   if (barrageTimer > 0) {
     barrageTimer -= dt;
     if (barrageTimer <= 0) {

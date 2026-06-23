@@ -38,10 +38,18 @@ const CONFIG = {
   // its HEAD center at (babyHeadX, babyHeadY); incoming items resolve at the
   // baby's reaching hand, (babyHeadX+babyHandDX, babyHeadY+babyHandDY).
   babyHeadX:        180,    // px: on-screen x of the baby's head center
-  babyHeadY:        250,    // px: on-screen y of the baby's head center
+  babyHeadY:        315,    // px: head-center y — chosen so the whole figure
+                            // sits vertically centred on screen (it extends
+                            // ~45px below the head center at this scale)
   babyHeadPx:       108,    // target on-screen head height (uniform across poses)
   babyHandDX:       64,     // px right of head center where items are caught
   babyHandDY:       18,     // px below head center where items are caught
+  // gentle idle motion: the baby drifts up/down a few px at random about its
+  // centred origin (eases toward a fresh random target every reseed interval).
+  babyBobAmp:       7,      // px: max drift from the origin
+  babyBobEase:      1.8,    // per-second approach rate toward the current target
+  babyBobReseedMin: 0.7,    // s: min time before a new random target is picked
+  babyBobReseedMax: 1.6,    // s: max time before a new random target is picked
   catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
                             // within this many px of its head; else stands neutral
   spawnYJitter:     0.7,    // items spawn anywhere in middle 70% of height
