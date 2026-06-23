@@ -59,7 +59,7 @@ const CONFIG = {
 
   // scoring
   pointsPerBanana:    1,
-  penaltyPoints:      1,    // points lost for eating a broccoli
+  penaltyPoints:      0,    // points lost for eating a broccoli
   bananaSwatPenalty:  1,    // points lost for swatting a banana away (NOT a loss)
   broccoliEatenLimit: 10,   // eating this many broccoli total = game over
 
