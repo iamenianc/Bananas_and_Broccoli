@@ -72,7 +72,7 @@ function _cloud(ctx, cx, cy, size, color){
 const BABY_META = {
   catch:   { hcx:178.5, hcy:153.0, headH:294 },
   swat:    { hcx:183.5, hcy:152.5, headH:293 },
-  eating:  { hcx:168.5, hcy:147.5, headH:283 },
+  eating:  { hcx:174.0, hcy:151.0, headH:302 },
   yuck:    { hcx:158.5, hcy:144.5, headH:277 },
   neutral: { hcx:170.5, hcy:143.0, headH:286 },
 };
