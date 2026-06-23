@@ -110,6 +110,8 @@ const CONFIG = {
   // board is wiped clear so the player gets a beat to reset. Deliberately rare.
   powerupChance:    0.02,   // fraction of real-item spawns that become powerups
   powerupDuration:  4,      // seconds the buff lasts
+  eatFrameTime:     0.30,   // seconds each laughing frame holds while the two
+                            // baby-eat poses alternate during the buff
   powerupSpinRate:  3,      // rad/sec the disco ball spins while incoming
   powerupSpeedMult: 3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active

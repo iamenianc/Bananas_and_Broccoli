@@ -18,6 +18,7 @@ const IMG = {
   babyCatch:    loadImg('assets/baby_catch.png'),
   babySwat:     loadImg('assets/baby_swat.png'),
   babyEat:      loadImg('assets/baby_eat.png'),
+  babyEat2:     loadImg('assets/baby_eat2.png'),
   babyYuck:     loadImg('assets/baby_yuck.png'),
   babyNeutral:  loadImg('assets/baby_neutral.png'),
   discoball:    loadImg('assets/discoball.svg'),
@@ -77,6 +78,7 @@ const BABY_META = {
   catch:   { hcx:178.5, hcy:153.0, headH:294, fcy:274.5 },
   swat:    { hcx:168.0, hcy:151.5, headH:303, fcy:284.5 },
   eating:  { hcx:174.0, hcy:151.0, headH:302, fcy:275.5 },
+  eating2: { hcx:333.0, hcy:256.0, headH:496, fcy:453.5 },
   yuck:    { hcx:158.5, hcy:144.5, headH:277, fcy:284.5 },
   neutral: { hcx:164.5, hcy:151.0, headH:302, fcy:306.5 },
 };
@@ -122,12 +124,22 @@ const ART = {
   // toward the RIGHT, where incoming items resolve.
   baby(ctx, x, y, swatting, face, scale){
     face = face || (swatting ? 'swat' : 'neutral');
-    const img = face === 'eating' ? IMG.babyEat
-              : face === 'yuck'   ? IMG.babyYuck
-              : (face === 'swat' || swatting) ? IMG.babySwat
-              : face === 'catch'  ? IMG.babyCatch
-              : IMG.babyNeutral;
-    const meta = BABY_META[face] || BABY_META.neutral;
+    let img, meta;
+    if (face === 'eating'){
+      // power-up: alternate the two laughing frames a few times a second for a
+      // lively buff. Each frame carries its own head metrics so the head stays
+      // pinned at the same on-screen size/position as they swap.
+      const tt = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+      const alt = Math.floor(tt / CONFIG.eatFrameTime) % 2 === 1;
+      img  = alt ? IMG.babyEat2 : IMG.babyEat;
+      meta = alt ? BABY_META.eating2 : BABY_META.eating;
+    } else {
+      img = face === 'yuck'   ? IMG.babyYuck
+          : (face === 'swat' || swatting) ? IMG.babySwat
+          : face === 'catch'  ? IMG.babyCatch
+          : IMG.babyNeutral;
+      meta = BABY_META[face] || BABY_META.neutral;
+    }
     if (!img.complete || !img.naturalWidth) return;
     const s = (CONFIG.babyHeadPx / meta.headH) * (scale || 1);  // uniform head size
     // head center pinned horizontally; figure center placed babyFigCenter

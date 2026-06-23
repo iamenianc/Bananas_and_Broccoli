@@ -556,14 +556,12 @@ function render(){
   else if (swatting)       face = 'swat';
   else if (yuckTimer  > 0) face = 'yuck';
   else {
-    // lunge into the 'catch' pose as a real item closes in; otherwise the
-    // baby stands calmly in the 'neutral' pose.
-    let closing = false;
-    for (const it of items){
-      if (it.resolved || it.flying || it.decoy) continue;
-      if (it.x - baby.x < CONFIG.catchAnticipateDist){ closing = true; break; }
-    }
-    face = closing ? 'catch' : 'neutral';
+    // The calm 'neutral' pose now appears ONLY when the board is empty — i.e.
+    // the screen has just been cleared (power-up ended) or a level is being
+    // announced (levelUp() also clears items). Whenever any food is on screen
+    // the baby stays in the engaged 'catch' pose, ready to reach.
+    const cleared = items.length === 0 || levelFreezeTimer > 0;
+    face = cleared ? 'neutral' : 'catch';
   }
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
