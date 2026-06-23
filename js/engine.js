@@ -42,7 +42,6 @@ let items = [];          // {x,y,vx,vy,ux,uy,r,type:'banana'|'broccoli'|'powerup
 let score = 0;
 let level = 1;           // difficulty level; advances each time score hits pointsPerLevel
 let bananasEaten = 0;    // cumulative bananas caught across ALL levels (loser-screen stat)
-let levelFreezeTimer = 0;// >0 while the game is frozen announcing a fresh level
 let elapsed = 0;         // seconds alive (animation only; difficulty is level-based)
 let spawnTimer = 0;
 let holding = false;     // finger down = swatting
@@ -63,7 +62,7 @@ let babyBobTarget = 0;   // drift target the offset is easing toward
 let babyBobReseed = 0;   // seconds until a new random drift target is picked
 
 function reset(){
-  items = []; score = 0; level = 1; bananasEaten = 0; levelFreezeTimer = 0;
+  items = []; score = 0; level = 1; bananasEaten = 0;
   elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   charging = false; chargeTimer = 0;
@@ -82,16 +81,32 @@ function updateLevelHud(){
   if (hudLevel) hudLevel.textContent = 'LEVEL ' + level;
 }
 
-// Advance to the next level: bump difficulty, reset the per-level score to 1,
-// cancel any buff/charge, clear the screen, and freeze briefly to announce it.
+// Knock every banana/broccoli currently on the field tumbling off the bottom
+// of the screen (used on level-up so the board clears without a pause).
+function knockdownField(){
+  for (const it of items){
+    if (it.resolved || it.flying) continue;
+    if (it.type !== 'banana' && it.type !== 'broccoli') continue;
+    it.flying = true;
+    const ang = Math.PI * 0.5 + (Math.random() - 0.5) * 0.7;   // mostly downward
+    const spd = CONFIG.swatBackSpeed * (0.6 + Math.random() * 0.5);
+    it.vx = Math.cos(ang) * spd;
+    it.vy = Math.sin(ang) * spd;
+    it.spin = (Math.random() * 2 - 1) * CONFIG.swatSpinMax;
+    it.rot = 0;
+  }
+}
+
+// Advance to the next level: bump difficulty and reset the per-level score to 1.
+// Play is CONTINUOUS — no freeze — but every banana/broccoli on the field is
+// knocked down so the board clears as the next, faster level begins. Any active
+// buff/charge is cancelled.
 function levelUp(){
   level++;
   score = 1;
   powerupTimer = 0;                 // cancel any active buff
   charging = false; chargeTimer = 0;// and any charge in progress
-  items = [];                       // clear the screen
-  spawnTimer = 0;                   // burst back in the moment the freeze ends
-  levelFreezeTimer = CONFIG.levelAnnounceTime;
+  knockdownField();                 // sweep the field clear (no pause)
   updateLevelHud();
   updatePowerMeter();               // hide the charge meter if it was showing
 }
@@ -356,11 +371,6 @@ function resolve(it){
 }
 
 function update(dt){
-  // brief freeze while a new level is announced — nothing moves or spawns
-  if (levelFreezeTimer > 0){
-    levelFreezeTimer -= dt;
-    return;
-  }
   elapsed += dt;
 
   // slow random vertical bob: ease toward a fresh random target now and then
@@ -427,8 +437,6 @@ function update(dt){
     if (Math.hypot(it.x - target.x, it.y - target.y) <= CONFIG.resolveRadius){
       const reason = resolve(it);
       if (reason){ gameOver(reason); return; }
-      // a level-up clears the board and freezes the game — stop this frame
-      if (levelFreezeTimer > 0) return;
     }
   }
   // flying banana hitting an incoming broccoli: both tumble off-screen together
@@ -556,17 +564,14 @@ function render(){
   else if (swatting)       face = 'swat';
   else if (yuckTimer  > 0) face = 'yuck';
   else {
-    // The calm 'neutral' pose now appears ONLY when the board is empty — i.e.
-    // the screen has just been cleared (power-up ended) or a level is being
-    // announced (levelUp() also clears items). Whenever any food is on screen
-    // the baby stays in the engaged 'catch' pose, ready to reach.
-    const cleared = items.length === 0 || levelFreezeTimer > 0;
-    face = cleared ? 'neutral' : 'catch';
+    // The calm 'neutral' pose appears ONLY when the board is empty — i.e. the
+    // screen has just been cleared (power-up ended, or a level-up knocked the
+    // field down and the pieces have tumbled off). Whenever any food is on
+    // screen the baby stays in the engaged 'catch' pose, ready to reach.
+    face = items.length === 0 ? 'neutral' : 'catch';
   }
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
-  // brief "LEVEL N" banner over the frozen board on each level-up
-  if (levelFreezeTimer > 0) ART.levelAnnounce(ctx, VW, VH, level, levelFreezeTimer);
   ctx.restore();
 }
 

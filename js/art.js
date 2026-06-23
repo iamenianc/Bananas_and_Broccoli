@@ -78,7 +78,7 @@ const BABY_META = {
   catch:   { hcx:178.5, hcy:153.0, headH:294, fcy:274.5 },
   swat:    { hcx:168.0, hcy:151.5, headH:303, fcy:284.5 },
   eating:  { hcx:174.0, hcy:151.0, headH:302, fcy:275.5 },
-  eating2: { hcx:333.0, hcy:256.0, headH:496, fcy:453.5 },
+  eating2: { hcx:114.4, hcy:101.0, headH:200, fcy:186.5 },
   yuck:    { hcx:158.5, hcy:144.5, headH:277, fcy:284.5 },
   neutral: { hcx:164.5, hcy:151.0, headH:302, fcy:306.5 },
 };
@@ -342,33 +342,6 @@ const ART = {
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.restore();
-  },
-
-  // Brief "LEVEL N" banner shown over the frozen board when a new level starts.
-  // `timer` counts down from CONFIG.levelAnnounceTime; we pop the text in, hold
-  // it, then fade out over the final moments.
-  levelAnnounce(ctx, w, h, level, timer){
-    const total = CONFIG.levelAnnounceTime || 1;
-    const p = Math.max(0, Math.min(1, 1 - timer / total));   // 0..1 through the freeze
-    const pop = p < 0.5 ? 1 - Math.pow(1 - p * 2, 3) : 1;    // ease-out grow in first half
-    const scale = 0.6 + 0.4 * pop;
-    const alpha = Math.min(1, timer / 0.25);                 // fade out the last 0.25s
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.translate(w / 2, h / 2);
-    ctx.scale(scale, scale);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = '900 150px "Comic Neue", "Comic Sans MS", cursive';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 14;
-    ctx.strokeStyle = '#000';
-    ctx.strokeText('LEVEL ' + level, 0, 0);
-    ctx.fillStyle = '#ffd23f';
-    ctx.fillText('LEVEL ' + level, 0, 0);
     ctx.restore();
   },
 

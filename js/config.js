@@ -25,8 +25,9 @@ const CONFIG = {
   // speed(level) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(level-1)/tau).
   levelSpeedTau:    5,      // levels: time-constant of the per-level speed curve
   pointsPerLevel:   100,    // points that complete a level; reaching it resets the
-                            // score to 1 and advances to the next (faster) level
-  levelAnnounceTime: 1.2,   // seconds the game freezes to announce each new level
+                            // score to 1 and advances to the next (faster) level.
+                            // Play is continuous — the field is knocked down, not
+                            // frozen — when a level begins.
   spawnEveryStart:  0.70,   // seconds between spawn BURSTS during level 1
   spawnEveryMin:    0.28,   // fastest spawn interval (reached at high levels)
   spawnRampPerLevel: 0.04,  // how much the spawn interval tightens each level
@@ -118,7 +119,7 @@ const CONFIG = {
   // The disco ball is the ONLY trigger: catch it, then survive this many
   // seconds with NO loss of energy (no broccoli eaten) and NO loss of points.
   // A meter fills one segment per second; complete it and the buff activates.
-  powerupChargeTime: 7,     // seconds of clean play after the disco ball
+  powerupChargeTime: 3,     // seconds of clean play after the disco ball
 
   // barrage: a terrifying barrage of broccoli only that is fast and furious.
   barrageMinCooldown: 50,   // seconds minimum between barrages
