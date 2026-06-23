@@ -34,8 +34,16 @@ const CONFIG = {
   decoyMissOffset:  140,    // px above/below baby a decoy is aimed (must
                             // exceed resolveRadius so it cleanly misses)
 
-  // baby (the player) sits at the LEFT edge, vertically centered.
-  babyXFromLeft:    90,     // px in from left edge — items resolve here
+  // baby (the player) sits near the LEFT edge. The sprite is anchored by
+  // its HEAD center at (babyHeadX, babyHeadY); incoming items resolve at the
+  // baby's reaching hand, (babyHeadX+babyHandDX, babyHeadY+babyHandDY).
+  babyHeadX:        180,    // px: on-screen x of the baby's head center
+  babyHeadY:        250,    // px: on-screen y of the baby's head center
+  babyHeadPx:       215,    // target on-screen head height (uniform across poses)
+  babyHandDX:       128,    // px right of head center where items are caught
+  babyHandDY:       36,     // px below head center where items are caught
+  catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
+                            // within this many px of its head; else stands neutral
   spawnYJitter:     0.7,    // items spawn anywhere in middle 70% of height
   itemRadius:       34,     // collision + draw size
   resolveRadius:    50,     // distance from baby at which an item resolves
@@ -87,9 +95,6 @@ const CONFIG = {
   // sprite sizing — food/spoon are drawn from PNG illustrations in assets/.
   // foodSpriteScale: longest side of a food sprite = itemRadius * this.
   foodSpriteScale:  2.8,
-  // baby is a 16-bit pixel-art SVG (assets/baby_*.svg); canvas px per
-  // sprite pixel. ~6 makes a nice big head (~100px across).
-  babyPixel:        6,
 
   // color (kept for reference; sprites now provide the look)
   bananaFill:       '#ffd23f',

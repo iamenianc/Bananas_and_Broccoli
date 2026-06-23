@@ -85,14 +85,13 @@ function updateBroccoliHud(){
 }
 
 function babyPos(){
-  return { x: CONFIG.babyXFromLeft, y: VH/2 };
+  return { x: CONFIG.babyHeadX, y: CONFIG.babyHeadY };
 }
 
 function babyHandPos(){
-  const baby = babyPos();
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
-  const handOffset = 12 * CONFIG.babyPixel * babyScale;
-  return { x: baby.x + handOffset, y: baby.y };
+  return { x: CONFIG.babyHeadX + CONFIG.babyHandDX * babyScale,
+           y: CONFIG.babyHeadY + CONFIG.babyHandDY * babyScale };
 }
 
 function currentSpeed(){
@@ -168,12 +167,12 @@ function incomingArrivals(sp){
 }
 
 function spawn(){
-  const baby = babyPos();
   const band = VH * CONFIG.spawnYJitter;
   const n = CONFIG.burstMin + Math.floor(Math.random()*(CONFIG.burstMax-CONFIG.burstMin+1));
-  // spread the burst's spawn heights so they enter from different points
+  // spread the burst's spawn heights across the middle of the screen so
+  // items enter from different points (independent of the baby's anchor).
   for (let i=0; i<n; i++){
-    const sy = baby.y + (Math.random()-0.5)*band;
+    const sy = VH/2 + (Math.random()-0.5)*band;
     const isDecoy = Math.random() < CONFIG.decoyChance;
     spawnOne(sy, isDecoy);
   }
@@ -393,7 +392,6 @@ function render(){
   ART.background(ctx, VW, VH, elapsed);
 
   const baby = babyPos();
-  const hand = babyHandPos();
   for (const it of items){
     if (it.resolved) continue;
     if (it.flying){
@@ -417,10 +415,20 @@ function render(){
     }
   }
   const swatting = holding || swatHoldTimer > 0;
-  const face = swatting ? 'swat'
-             : happyTimer > 0 ? 'eating'
-             : yuckTimer  > 0 ? 'yuck'
-             : 'catch';
+  let face;
+  if (swatting)            face = 'swat';
+  else if (happyTimer > 0) face = 'eating';
+  else if (yuckTimer  > 0) face = 'yuck';
+  else {
+    // lunge into the 'catch' pose as a real item closes in; otherwise the
+    // baby stands calmly in the 'neutral' pose.
+    let closing = false;
+    for (const it of items){
+      if (it.resolved || it.flying || it.decoy) continue;
+      if (it.x - baby.x < CONFIG.catchAnticipateDist){ closing = true; break; }
+    }
+    face = closing ? 'catch' : 'neutral';
+  }
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
   ctx.restore();

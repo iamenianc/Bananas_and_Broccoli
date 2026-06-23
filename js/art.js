@@ -14,10 +14,11 @@ const IMG = {
   bananaPeeled: loadImg('assets/banana_peeled.webp'),
   broccoli:     loadImg('assets/broccoli.webp'),
   palmTrees:    loadImg('assets/palm_trees.webp'),
-  babyCatch:    loadImg('assets/baby_catch.svg'),
-  babySwat:     loadImg('assets/baby_swat.svg'),
-  babyEat:      loadImg('assets/baby_eat.svg'),
-  babyYuck:     loadImg('assets/baby_yuck.svg'),
+  babyCatch:    loadImg('assets/baby_catch.png'),
+  babySwat:     loadImg('assets/baby_swat.png'),
+  babyEat:      loadImg('assets/baby_eat.png'),
+  babyYuck:     loadImg('assets/baby_yuck.png'),
+  babyNeutral:  loadImg('assets/baby_neutral.png'),
 };
 
 function _mtY(lx, baseY, amp, seed){
@@ -63,10 +64,18 @@ function _cloud(ctx, cx, cy, size, color){
   ctx.restore();
 }
 
-// Pixel-art baby sprite metrics (must match tools/gen_baby.py grid): the
-// head center sits at (cx,cy) in the 24x20 grid, so we can anchor the head
-// over the baby's logical position while the hands extend to the right.
-const BABY_GRID = { w:30, h:22, cx:9.5, cy:10.7 };
+// Per-pose anchor metrics in each sprite's own natural-pixel coordinates:
+// the head bounding-box center (hcx,hcy) and head height (headH). Every pose
+// is drawn so its head appears at a uniform on-screen size
+// (CONFIG.babyHeadPx) with the head center pinned to the anchor point — this
+// keeps all five poses the same scale despite differing source resolutions.
+const BABY_META = {
+  catch:   { hcx:183.5, hcy:152.5, headH:293 },
+  swat:    { hcx:178.5, hcy:153.0, headH:294 },
+  eating:  { hcx:168.5, hcy:147.5, headH:283 },
+  yuck:    { hcx:158.5, hcy:144.5, headH:277 },
+  neutral: { hcx:170.5, hcy:143.0, headH:286 },
+};
 
 const ART = {
   stroke: 3,
@@ -103,20 +112,24 @@ const ART = {
     ART.sprite(ctx, IMG.broccoli, x, y, r * CONFIG.foodSpriteScale);
   },
 
-  // The baby, drawn from 16-bit pixel-art SVG sprites (black hair, brown
-  // eyes). face: 'catch' | 'swat' | 'eating' | 'yuck'. The head is anchored
-  // over (x,y); hands reach toward the RIGHT (incoming items).
+  // The baby, drawn from full-colour cartoon sprites (black hair, blue
+  // onesie). face: 'neutral' | 'catch' | 'swat' | 'eating' | 'yuck'. The
+  // head is pinned over (x,y) at a uniform size; the reaching hand lands
+  // toward the RIGHT, where incoming items resolve.
   baby(ctx, x, y, swatting, face, scale){
-    face = face || (swatting ? 'swat' : 'catch');
+    face = face || (swatting ? 'swat' : 'neutral');
     const img = face === 'eating' ? IMG.babyEat
               : face === 'yuck'   ? IMG.babyYuck
               : (face === 'swat' || swatting) ? IMG.babySwat
-              : IMG.babyCatch;
+              : face === 'catch'  ? IMG.babyCatch
+              : IMG.babyNeutral;
+    const meta = BABY_META[face] || BABY_META.neutral;
     if (!img.complete || !img.naturalWidth) return;
-    const g = BABY_GRID, s = CONFIG.babyPixel * (scale || 1);  // canvas px per sprite px
+    const s = (CONFIG.babyHeadPx / meta.headH) * (scale || 1);  // uniform head size
     const prev = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = false;               // crisp pixel-art edges
-    ctx.drawImage(img, x - g.cx*s, y - g.cy*s, g.w*s, g.h*s);
+    ctx.imageSmoothingEnabled = true;                // smooth cartoon edges
+    ctx.drawImage(img, x - meta.hcx*s, y - meta.hcy*s,
+                  img.naturalWidth*s, img.naturalHeight*s);
     ctx.imageSmoothingEnabled = prev;
   },
 
