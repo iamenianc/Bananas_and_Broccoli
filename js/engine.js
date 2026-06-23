@@ -157,14 +157,23 @@ function updatePowerMeter(){
   hudPower.innerHTML = html;
 }
 
-// Render lives as a row of segments — one per allowed broccoli. Each broccoli
-// eaten dims a segment; the row empties from the right as lives are spent.
+// Render lives as a row of segments — one per life point. The row empties from
+// the right as life is spent; because life is fractional (broccoli costs a whole
+// point, a banana restores 1%), the boundary segment fades to show the partial.
 function updateBroccoliHud(){
+  const limit = CONFIG.broccoliEatenLimit;
+  const remaining = Math.max(0, limit - broccoliEaten);
+  const full = Math.floor(remaining + 1e-9);     // whole life points still lit
+  const partial = remaining - full;              // 0..1 fraction in the next seg
   let html = '';
-  for (let i=0; i<CONFIG.broccoliEatenLimit; i++){
-    const alive = i < CONFIG.broccoliEatenLimit - broccoliEaten;
-    const cls = alive ? 'b left' : 'b lost';
-    html += '<span class="' + cls + '"></span>';
+  for (let i=0; i<limit; i++){
+    if (i < full){
+      html += '<span class="b left"></span>';
+    } else if (i === full && partial > 0){
+      html += '<span class="b left" style="opacity:' + partial.toFixed(2) + '"></span>';
+    } else {
+      html += '<span class="b lost"></span>';
+    }
   }
   hudBroccoli.innerHTML = html;
   hudBroccoli.classList.toggle('warn',
@@ -317,7 +326,7 @@ function resolve(it){
     } else {
       it.resolved = true;
       if (broccoliEaten > 0) {
-        broccoliEaten--;
+        broccoliEaten = Math.max(0, broccoliEaten - 1);  // refund a full life
         updateBroccoliHud();
       }
       startCharge();                    // begin the clean-play charge attempt
@@ -341,6 +350,12 @@ function resolve(it){
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
       bananasEaten++;                   // one banana eaten (cumulative across levels)
+      // eating a banana also restores 1% of the life bar
+      if (broccoliEaten > 0){
+        broccoliEaten = Math.max(0, broccoliEaten -
+          CONFIG.bananaLifeRestorePct * CONFIG.broccoliEatenLimit);
+        updateBroccoliHud();
+      }
     }
   } else { // broccoli
     if (!swatting){

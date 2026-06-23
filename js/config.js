@@ -83,7 +83,9 @@ const CONFIG = {
   pointsPerBanana:    2,    // points for catching a banana (×2 again while powered up)
   penaltyPoints:      0,    // points lost for eating a broccoli
   bananaSwatPenalty:  1,    // points lost for swatting a banana away (NOT a loss)
-  broccoliEatenLimit: 10,   // eating this many broccoli total = game over
+  broccoliEatenLimit: 10,   // total life points; losing this many = game over
+  bananaLifeRestorePct: 0.01, // each banana eaten restores this fraction of the
+                            // full life bar (1% of broccoliEatenLimit)
 
   // staggering — try to avoid two real items reaching the baby at the
   // same instant, which is unfair/unreadable. New incoming items get a
@@ -94,7 +96,8 @@ const CONFIG = {
   maxArrivalDelay:  0.9,    // never hold an item back longer than this
 
   // RULES (single source of truth, mirrored in resolve()):
-  //  - Banana    + released (catching)  => +pointsPerBanana (×2 while powered up)
+  //  - Banana    + released (catching)  => +pointsPerBanana (×2 while powered up);
+  //                                        also restores bananaLifeRestorePct of life
   //  - Banana    + holding  (rejecting) => -bananaSwatPenalty; banana flies off
   //                                        half-peeled (and costs a life at 0 pts)
   //  - Broccoli  + holding  (swatting)  => safe, swatted away (good)
