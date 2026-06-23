@@ -75,7 +75,7 @@ const CONFIG = {
   resolveRadius:    50,     // distance from baby at which an item resolves
 
   // scoring
-  pointsPerBanana:    1,
+  pointsPerBanana:    2,    // points for catching a banana (×2 again while powered up)
   penaltyPoints:      0,    // points lost for eating a broccoli
   bananaSwatPenalty:  1,    // points lost for swatting a banana away (NOT a loss)
   broccoliEatenLimit: 10,   // eating this many broccoli total = game over
@@ -105,10 +105,11 @@ const CONFIG = {
 
   // power-up: a rare sparkling disco ball — while the buff is active it doubles
   // banana points, makes broccoli score like a banana, triples item speed (and
-  // spawn rate to match), doubles the baby's size, and throws a disco. Lasts
-  // powerupDuration seconds. Deliberately rare.
+  // spawn rate to match), doubles the baby's size, snaps the baby to dead-centre
+  // of the screen, and throws a disco. Lasts powerupDuration seconds, then the
+  // board is wiped clear so the player gets a beat to reset. Deliberately rare.
   powerupChance:    0.02,   // fraction of real-item spawns that become powerups
-  powerupDuration:  10,     // seconds the buff lasts
+  powerupDuration:  4,      // seconds the buff lasts
   powerupSpinRate:  3,      // rad/sec the disco ball spins while incoming
   powerupSpeedMult: 3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active

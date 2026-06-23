@@ -155,13 +155,19 @@ function updateBroccoliHud(){
 }
 
 function babyPos(){
+  // While powered up the baby snaps to dead-centre of the screen (the figure
+  // center sits babyFigCenter below the head anchor, so head y = VH/2 - that).
+  if (powerupTimer > 0){
+    return { x: VW/2, y: VH/2 - CONFIG.babyFigCenter };
+  }
   return { x: CONFIG.babyHeadX, y: CONFIG.babyHeadY + babyBobY };
 }
 
 function babyHandPos(){
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
-  return { x: CONFIG.babyHeadX + CONFIG.babyHandDX * babyScale,
-           y: CONFIG.babyHeadY + babyBobY + CONFIG.babyHandDY * babyScale };
+  const p = babyPos();
+  return { x: p.x + CONFIG.babyHandDX * babyScale,
+           y: p.y + CONFIG.babyHandDY * babyScale };
 }
 
 function currentSpeed(){
@@ -490,7 +496,17 @@ function update(dt){
         : swatting ? 'SWATTING' : 'CATCHING';
   if (hudMode.textContent !== modeLabel) hudMode.textContent = modeLabel;
   if (yuckTimer    > 0) yuckTimer    -= dt;
-  if (powerupTimer > 0) powerupTimer -= dt;
+  if (powerupTimer > 0){
+    powerupTimer -= dt;
+    if (powerupTimer <= 0){
+      // buff just ended: wipe the board so the player gets a beat to reset
+      // (the baby also drops back to its left-edge home next frame), and hold
+      // off the next spawn by one normal interval for the breather.
+      powerupTimer = 0;
+      items = [];
+      spawnTimer = currentSpawnInterval();
+    }
+  }
 }
 
 function render(){
