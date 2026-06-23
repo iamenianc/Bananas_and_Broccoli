@@ -73,7 +73,7 @@ function _cloud(ctx, cx, cy, size, color){
 // or less leg in frame all stay vertically centred the same way.
 const BABY_META = {
   catch:   { hcx:178.5, hcy:153.0, headH:294, fcy:274.5 },
-  swat:    { hcx:183.5, hcy:152.5, headH:293, fcy:280.5 },
+  swat:    { hcx:168.0, hcy:151.5, headH:303, fcy:284.5 },
   eating:  { hcx:174.0, hcy:151.0, headH:302, fcy:275.5 },
   yuck:    { hcx:158.5, hcy:144.5, headH:277, fcy:284.5 },
   neutral: { hcx:164.5, hcy:151.0, headH:302, fcy:306.5 },
