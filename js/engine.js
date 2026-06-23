@@ -262,7 +262,7 @@ function spawnOne(sy, type, isDecoy, opts){
     }
   }
   const item = {
-    x:sx, y:sy, r, type, resolved:false, decoy:isDecoy, delay,
+    x:sx, y:sy, r, type, resolved:false, decoy:isDecoy, delay, speedMult,
     ux:dx/len, uy:dy/len,
     vx:dx/len*sp, vy:dy/len*sp
   };
@@ -481,8 +481,10 @@ function update(dt){
       it.uy = dy / len;
     }
 
-    // incoming item: keep moving along the fixed aim direction
-    const speed = sp + (swatting ? CONFIG.swatNudge : 0);
+    // incoming item: keep moving along the fixed aim direction. Per-item
+    // speedMult keeps volley broccoli flying at their faster pace every frame
+    // (not just at launch).
+    const speed = sp * (it.speedMult || 1) + (swatting ? CONFIG.swatNudge : 0);
     it.vx = it.ux * speed;
     it.vy = it.uy * speed;
     it.x += it.vx * dt;
