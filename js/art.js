@@ -359,6 +359,37 @@ const ART = {
     ctx.restore();
   },
 
+  // New-level name that flashes in then fades at the centre of the play area
+  // WITHOUT pausing play. `timer` counts down from `total`: the text pops/flashes
+  // bright over the first sliver of time, then eases away to nothing.
+  levelFlash(ctx, w, h, level, timer, total){
+    total = total || 1;
+    const p = Math.max(0, Math.min(1, 1 - timer / total));   // 0..1 through the flash
+    // alpha: snap up over the first 12%, then fade out across the rest
+    const alpha = p < 0.12 ? p / 0.12 : 1 - (p - 0.12) / 0.88;
+    if (alpha <= 0) return;
+    const pop = Math.min(1, p / 0.18);                       // quick grow-in
+    const scale = 0.65 + 0.35 * (1 - Math.pow(1 - pop, 3)) + 0.05 * p;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(scale, scale);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 150px "Comic Neue", "Comic Sans MS", cursive';
+    ctx.lineJoin = 'round';
+    // soft glow behind the text for the "flash"
+    ctx.shadowColor = 'rgba(255,210,63,0.9)';
+    ctx.shadowBlur = 40;
+    ctx.lineWidth = 14;
+    ctx.strokeStyle = '#000';
+    ctx.strokeText('LEVEL ' + level, 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillText('LEVEL ' + level, 0, 0);
+    ctx.restore();
+  },
+
   catchZone(ctx, x, y, r){
     ART.wobble(ctx, c=>{
       c.setLineDash([10,12]);

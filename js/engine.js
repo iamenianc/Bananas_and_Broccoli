@@ -42,6 +42,7 @@ let items = [];          // {x,y,vx,vy,ux,uy,r,type:'banana'|'broccoli'|'powerup
 let score = 0;
 let level = 1;           // difficulty level; advances each time score hits pointsPerLevel
 let bananasEaten = 0;    // cumulative bananas caught across ALL levels (loser-screen stat)
+let levelFlashTimer = 0; // >0 while the new level's name flashes/fades at centre
 let elapsed = 0;         // seconds alive (animation only; difficulty is level-based)
 let spawnTimer = 0;
 let holding = false;     // finger down = swatting
@@ -62,7 +63,7 @@ let babyBobTarget = 0;   // drift target the offset is easing toward
 let babyBobReseed = 0;   // seconds until a new random drift target is picked
 
 function reset(){
-  items = []; score = 0; level = 1; bananasEaten = 0;
+  items = []; score = 0; level = 1; bananasEaten = 0; levelFlashTimer = 0;
   elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   charging = false; chargeTimer = 0;
@@ -107,6 +108,7 @@ function levelUp(){
   powerupTimer = 0;                 // cancel any active buff
   charging = false; chargeTimer = 0;// and any charge in progress
   knockdownField();                 // sweep the field clear (no pause)
+  levelFlashTimer = CONFIG.levelFlashTime;  // flash the new level's name
   updateLevelHud();
   updatePowerMeter();               // hide the charge meter if it was showing
 }
@@ -170,11 +172,8 @@ function updateBroccoliHud(){
 }
 
 function babyPos(){
-  // While powered up the baby snaps to dead-centre of the screen (the figure
-  // center sits babyFigCenter below the head anchor, so head y = VH/2 - that).
-  if (powerupTimer > 0){
-    return { x: VW/2, y: VH/2 - CONFIG.babyFigCenter };
-  }
+  // The baby stays at its normal left-edge home even while powered up; at the
+  // 2× buff scale the figure still clears every edge of the playfield.
   return { x: CONFIG.babyHeadX, y: CONFIG.babyHeadY + babyBobY };
 }
 
@@ -400,6 +399,7 @@ function update(dt){
   if (spawnTimer <= 0){ spawn(); spawnTimer = currentSpawnInterval(); }
 
   if (swatHoldTimer > 0) swatHoldTimer -= dt;
+  if (levelFlashTimer > 0) levelFlashTimer -= dt;  // fades the level-name flash
 
   const target = babyHandPos();
   const sp = currentSpeed();
@@ -574,6 +574,10 @@ function render(){
   }
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
+  // new-level name flashes then fades over the centre while play continues
+  if (levelFlashTimer > 0){
+    ART.levelFlash(ctx, VW, VH, level, levelFlashTimer, CONFIG.levelFlashTime);
+  }
   ctx.restore();
 }
 

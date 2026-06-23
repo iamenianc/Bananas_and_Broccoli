@@ -28,6 +28,8 @@ const CONFIG = {
                             // score to 1 and advances to the next (faster) level.
                             // Play is continuous — the field is knocked down, not
                             // frozen — when a level begins.
+  levelFlashTime:   1.4,    // seconds the new level's name flashes then fades at
+                            // the centre of the play area (gameplay keeps running)
   spawnEveryStart:  0.70,   // seconds between spawn BURSTS during level 1
   spawnEveryMin:    0.28,   // fastest spawn interval (reached at high levels)
   spawnRampPerLevel: 0.04,  // how much the spawn interval tightens each level
