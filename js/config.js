@@ -95,7 +95,7 @@ const CONFIG = {
   //                                        half-peeled (and costs a life at 0 pts)
   //  - Broccoli  + holding  (swatting)  => safe, swatted away (good)
   //  - Broccoli  + released (eaten)     => costs a life toward broccoliEatenLimit
-  //                                        (but scores like a banana while powered up)
+  //                                        (harmless and worth nothing while powered up)
   //  - Disco ball+ released (caught)    => refunds a life and begins the power-up
   //                                        charge (survive powerupChargeTime clean)
 
@@ -105,16 +105,18 @@ const CONFIG = {
   swatHoldDuration: 0.18,   // seconds the swat remains active for tapped timing tolerance
 
   // power-up: a rare sparkling disco ball — while the buff is active it doubles
-  // banana points, makes broccoli score like a banana, triples item speed (and
-  // spawn rate to match), doubles the baby's size, snaps the baby to dead-centre
-  // of the screen, and throws a disco. Lasts powerupDuration seconds, then the
-  // board is wiped clear so the player gets a beat to reset. Deliberately rare.
+  // banana points, makes ONLY bananas count (broccoli is harmless but scores
+  // nothing), doubles item speed (and spawn rate to match), doubles the baby's
+  // size, snaps the baby to dead-centre of the screen, and throws a disco that
+  // recolours the BACKGROUND only (sprites keep their colours). Lasts
+  // powerupDuration seconds, then the board is wiped clear so the player gets a
+  // beat to reset. Deliberately rare.
   powerupChance:    0.02,   // fraction of real-item spawns that become powerups
   powerupDuration:  4,      // seconds the buff lasts
   eatFrameTime:     0.30,   // seconds each laughing frame holds while the two
                             // baby-eat poses alternate during the buff
   powerupSpinRate:  3,      // rad/sec the disco ball spins while incoming
-  powerupSpeedMult: 3,      // item speed multiplier while the buff is active
+  powerupSpeedMult: 2,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active
   // The disco ball is the ONLY trigger: catch it, then survive this many
   // seconds with NO loss of energy (no broccoli eaten) and NO loss of points.

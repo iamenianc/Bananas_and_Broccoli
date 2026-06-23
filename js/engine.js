@@ -340,8 +340,8 @@ function resolve(it){
     if (!swatting){
       it.resolved = true;
       if (powerupTimer > 0){
-        // powered up: broccoli scores just like a banana (doubled)
-        score += CONFIG.pointsPerBanana * 2;
+        // powered up: broccoli is harmless but worth nothing — only bananas
+        // count toward points while the buff is active.
       } else {
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
@@ -528,11 +528,13 @@ function render(){
   // clip to the playfield so off-screen spawns and the letterbox margins
   // stay clean.
   ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
-  ART.background(ctx, VW, VH, elapsed);
-  // power-up party: disco lights wash over the world while the buff is active,
-  // easing out over the final second so it doesn't snap off.
-  if (powerupTimer > 0){
-    ART.disco(ctx, VW, VH, elapsed, Math.min(1, powerupTimer));
+  // power-up party: the background recolours and disco lights play while the
+  // buff is active, easing out over the final second so it doesn't snap off.
+  // Both run before sprites, so only the background changes colour.
+  const party = powerupTimer > 0 ? Math.min(1, powerupTimer) : 0;
+  ART.background(ctx, VW, VH, elapsed, party);
+  if (party > 0){
+    ART.disco(ctx, VW, VH, elapsed, party);
   }
 
   const baby = babyPos();

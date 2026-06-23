@@ -152,7 +152,11 @@ const ART = {
     ctx.imageSmoothingEnabled = prev;
   },
 
-  background(ctx, w, h, t){
+  // Parallax scenery. `party` (0..1) is the power-up buff strength: while it's
+  // active the whole BACKGROUND is washed with cycling disco colours. This runs
+  // before any sprites are drawn, so only the background recolours — the baby
+  // and food keep their true colours.
+  background(ctx, w, h, t, party){
     const sky = ctx.createLinearGradient(0, 0, 0, h);
     sky.addColorStop(0,    '#cfe8f5');
     sky.addColorStop(0.55, '#e3f2fb');
@@ -202,6 +206,19 @@ const ART = {
     _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#aed4b4', 3.21);
     // foreground hills
     _bgLayer(ctx, w, h, t * 140, h*0.79, 55, '#9ccba6', 6.10);
+
+    // power-up: recolour the whole background with a shifting disco wash. Drawn
+    // here (before sprites) so the scenery changes colour but sprites do not.
+    party = Math.max(0, Math.min(1, party || 0));
+    if (party > 0){
+      const hue = (t * 80) % 360;
+      const wash = ctx.createLinearGradient(0, 0, 0, h);
+      wash.addColorStop(0,   'hsla(' + hue + ',85%,60%,' + (0.55 * party).toFixed(3) + ')');
+      wash.addColorStop(0.5, 'hsla(' + ((hue + 60) % 360) + ',85%,55%,' + (0.45 * party).toFixed(3) + ')');
+      wash.addColorStop(1,   'hsla(' + ((hue + 140) % 360) + ',85%,55%,' + (0.55 * party).toFixed(3) + ')');
+      ctx.fillStyle = wash;
+      ctx.fillRect(0, 0, w, h);
+    }
   },
 
   // Disco-ball power-up — an SVG mirror-tiled sphere lit with FAUX LIGHTING:
@@ -290,10 +307,11 @@ const ART = {
     ctx.restore();
   },
 
-  // DISCO! Drawn over the world while the power-up buff is active: a hanging
-  // mirror ball spilling rotating coloured light beams across the playfield,
-  // plus a soft pulsing colour wash and scattered twinkling sparkles. `f` is
-  // 0..1 buff fade (used to ease the party in/out at the edges of the buff).
+  // DISCO! Background accent drawn (before the sprites) while the buff is
+  // active: rotating coloured light beams fanning down from a top-centre mirror
+  // ball, plus scattered twinkling sparkles. The overall colour change lives in
+  // background()'s disco wash; this only adds the beams/sparkles behind the
+  // sprites. `f` is 0..1 buff fade (eases the party in/out at the buff's edges).
   disco(ctx, w, h, t, f){
     f = Math.max(0, Math.min(1, f == null ? 1 : f));
     if (f <= 0) return;
@@ -324,10 +342,6 @@ const ART = {
       ctx.closePath();
       ctx.fill();
     }
-    // gentle full-screen colour wash cycling through the hues
-    const washHue = (t * 80) % 360;
-    ctx.fillStyle = 'hsla(' + washHue + ',90%,60%,' + (0.10 * f).toFixed(3) + ')';
-    ctx.fillRect(0, 0, w, h);
     // scattered twinkling floor sparkles
     const sparks = 22;
     for (let i = 0; i < sparks; i++){
