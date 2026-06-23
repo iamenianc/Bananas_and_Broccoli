@@ -81,7 +81,7 @@ html, body {
 }
 #mode  { opacity:.55; font-size:14px; }
 
-/* Power-up charge meter — appears only while charging (after a pink banana),
+/* Power-up charge meter — appears only while charging (after the disco ball),
    gaining one segment per clean second toward the buff. */
 #power {
   position:fixed; left:50%; transform:translateX(-50%);

@@ -47,7 +47,7 @@ let broccoliEaten = 0;   // counts toward the lose condition
 let yuckTimer    = 0;    // >0 while baby shows the disgusted-broccoli face
 let powerupTimer = 0;    // >0 while power-up buff is active (baby shows the eat face)
 let bananaStreak = 0;    // consecutive bananas caught; hitting the goal triggers the buff
-let charging = false;    // true while charging the buff after eating a pink banana
+let charging = false;    // true while charging the buff after catching the disco ball
 let chargeTimer = 0;     // seconds of clean play accumulated toward the buff
 let lastPowerFilled = -1;// last segment count rendered in the power meter
 let powerVisible = false;// last visibility state of the power meter
@@ -73,7 +73,7 @@ function reset(){
   updatePowerMeter();
 }
 
-// ---- power-up charge: eat a pink banana, then survive powerupChargeTime
+// ---- power-up charge: catch the disco ball, then survive powerupChargeTime
 // seconds with no energy loss (broccoli eaten) and no points loss. The meter
 // fills one segment per second; any loss cancels the attempt.
 function startCharge(){

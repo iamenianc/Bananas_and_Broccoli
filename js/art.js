@@ -19,6 +19,7 @@ const IMG = {
   babyEat:      loadImg('assets/baby_eat.png'),
   babyYuck:     loadImg('assets/baby_yuck.png'),
   babyNeutral:  loadImg('assets/baby_neutral.png'),
+  discoball:    loadImg('assets/discoball.svg'),
 };
 
 function _mtY(lx, baseY, amp, seed){
@@ -190,20 +191,38 @@ const ART = {
     _bgLayer(ctx, w, h, t * 140, h*0.79, 55, '#9ccba6', 6.10);
   },
 
-  // Pink banana power-up — the normal banana sprite with a hot-pink tint overlay.
+  // Disco-ball power-up — an SVG mirror-tiled sphere with animated sparkle.
+  // The caller draws this inside a context already rotated by the item's spin,
+  // so the facets turn; on top we add a handful of twinkling glints that flash
+  // like light catching the mirrors.
   powerup(ctx, x, y, r){
-    if (!IMG.banana.complete || !IMG.banana.naturalWidth) return;
     const size = r * CONFIG.foodSpriteScale;
-    const k = size / Math.max(IMG.banana.naturalWidth, IMG.banana.naturalHeight);
-    const w = IMG.banana.naturalWidth * k, h = IMG.banana.naturalHeight * k;
+    const img = IMG.discoball;
+    if (img.complete && img.naturalWidth){
+      const k = size / Math.max(img.naturalWidth, img.naturalHeight);
+      const w = img.naturalWidth * k, h = img.naturalHeight * k;
+      ctx.drawImage(img, x - w/2, y - h/2, w, h);
+    }
+    // sparkle: additive twinkling glints over the surface
+    const t = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    const rad = size * 0.5;
     ctx.save();
     ctx.translate(x, y);
-    // draw banana normally, then overlay pink using source-atop so the tint
-    // follows the sprite's shape (transparent pixels stay transparent).
-    ctx.drawImage(IMG.banana, -w/2, -h/2, w, h);
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'rgba(255, 100, 180, 0.55)';
-    ctx.fillRect(-w/2, -h/2, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+    const glints = 7;
+    for (let i=0; i<glints; i++){
+      const ang = (i / glints) * Math.PI * 2 + i * 1.3;
+      const dist = rad * (0.22 + 0.6 * ((i * 0.37) % 1));
+      const gx = Math.cos(ang) * dist, gy = Math.sin(ang) * dist;
+      const tw = 0.5 + 0.5 * Math.sin(t * 6 + i * 2.1);   // 0..1 twinkle
+      const gr = rad * (0.05 + 0.12 * tw);
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+      g.addColorStop(0,   'rgba(255,255,255,' + (0.85 * tw).toFixed(3) + ')');
+      g.addColorStop(0.4, 'rgba(190,235,255,' + (0.40 * tw).toFixed(3) + ')');
+      g.addColorStop(1,   'rgba(190,235,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(gx, gy, gr, 0, Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   },
 
