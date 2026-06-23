@@ -7,7 +7,7 @@
    ============================================================ */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const hudScore = document.getElementById('score');
+const hudProgress = document.getElementById('progressFill');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
 const hudPower = document.getElementById('power');
@@ -71,7 +71,7 @@ function reset(){
   lastBroccoliEaten = 0;
   timeSinceLastBarrage = 50;
   babyBobY = 0; babyBobTarget = 0; babyBobReseed = 0;
-  hudScore.textContent = '0';
+  updateProgressHud();
   updateBroccoliHud();
   updatePowerMeter();
   updateLevelHud();
@@ -87,6 +87,14 @@ function updateLevelHud(){
 function pointsToAdvance(){
   return Math.round(CONFIG.pointsPerLevel *
     Math.pow(CONFIG.levelPointsGrowth, level - 1));
+}
+
+// Fill the corner progress bar to reflect how far the score has climbed toward
+// the current level's points target (0..100%).
+function updateProgressHud(){
+  if (!hudProgress) return;
+  const pct = Math.max(0, Math.min(100, (score / pointsToAdvance()) * 100));
+  hudProgress.style.height = pct + '%';
 }
 
 // Knock every banana/broccoli currently on the field tumbling off the bottom
@@ -361,7 +369,7 @@ function resolve(it){
         broccoliEaten++;
         updateBroccoliHud();
         if (broccoliEaten >= CONFIG.broccoliEatenLimit) {
-          hudScore.textContent = score;
+          updateProgressHud();
           return 'Deflected a banana at 0 points with no lives left.';
         }
       }
@@ -395,7 +403,7 @@ function resolve(it){
         updateBroccoliHud();
         if (broccoliEaten >= CONFIG.broccoliEatenLimit){
           if (score < 0) score = 0;
-          hudScore.textContent = score;
+          updateProgressHud();
           return 'you ate too many broccolis :(';
         }
       }
@@ -412,7 +420,7 @@ function resolve(it){
   if (score >= pointsToAdvance()){
     levelUp();
   }
-  hudScore.textContent = score;
+  updateProgressHud();
   return null;
 }
 
