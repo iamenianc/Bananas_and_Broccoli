@@ -222,7 +222,9 @@ function currentSpawnInterval(){
   return interval;
 }
 
-function spawnOne(sy, type, isDecoy){
+function spawnOne(sy, type, isDecoy, opts){
+  opts = opts || {};
+  const speedMult = opts.speedMult || 1;
   const r = CONFIG.itemRadius;
   const target = babyHandPos();
   const sx = VW + r;
@@ -233,12 +235,15 @@ function spawnOne(sy, type, isDecoy){
     : target.y;
   const dx = target.x - sx, dy = aimY - sy;
   const len = Math.hypot(dx, dy) || 1;
-  const sp = currentSpeed();
+  const sp = currentSpeed() * speedMult;
   // Stagger arrivals: nudge this item's launch delay until its predicted
   // arrival time is clear of every other incoming real item's arrival,
-  // so two things rarely reach the baby at the exact same instant.
+  // so two things rarely reach the baby at the exact same instant. A volley
+  // passes an explicit delay (opts.delay) to fire its shots in succession.
   let delay = 0;
-  if (!isDecoy){
+  if (opts.delay != null){
+    delay = opts.delay;
+  } else if (!isDecoy){
     const others = incomingArrivals(sp);
     let arrival = len/sp;
     let guard = 0;
@@ -282,6 +287,11 @@ function pickSpawnPoint(type, used){
 }
 
 function spawn(){
+  // rare event: a volley of broccoli fired in quick succession at double speed
+  if (barrageTimer <= 0 && Math.random() < CONFIG.volleyChance){
+    spawnBroccoliVolley();
+    return;
+  }
   const n = CONFIG.burstMin + Math.floor(Math.random()*(CONFIG.burstMax-CONFIG.burstMin+1));
   const used = new Set();
   for (let i=0; i<n; i++){
@@ -302,6 +312,20 @@ function spawn(){
     const baseType = type === 'powerup' ? 'banana' : type;
     const sy = pickSpawnPoint(baseType, used).yFrac * VH;
     spawnOne(sy, type, isDecoy);
+  }
+}
+
+// A rare broccoli volley: CONFIG.volleyCount broccoli fired straight at the baby
+// in quick succession (each held back volleyGap longer than the last) at double
+// speed — a sudden flurry the player must swat away in time.
+function spawnBroccoliVolley(){
+  const used = new Set();
+  for (let i=0; i<CONFIG.volleyCount; i++){
+    const sy = pickSpawnPoint('broccoli', used).yFrac * VH;
+    spawnOne(sy, 'broccoli', false, {
+      speedMult: CONFIG.volleySpeedMult,
+      delay: i * CONFIG.volleyGap
+    });
   }
 }
 

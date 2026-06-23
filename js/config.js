@@ -137,6 +137,13 @@ const CONFIG = {
   barrageSpeedMult:   1.7,  // speed multiplier for barrage items
   barrageChancePerSec: 0.08, // chance per second to trigger barrage after cooldown
 
+  // broccoli volley: a rare triple-shot of broccoli fired in quick succession
+  // at double speed (replaces a normal spawn tick when it triggers).
+  volleyChance:     0.005,  // chance per spawn tick of a broccoli volley (0.5%)
+  volleyCount:      3,      // broccoli launched in the volley
+  volleySpeedMult:  2,      // speed multiplier for volley broccoli
+  volleyGap:        0.25,   // seconds between successive shots in the volley
+
   // sprite sizing — food is drawn from illustrations in assets/.
   // foodSpriteScale: longest side of a food sprite = itemRadius * this.
   foodSpriteScale:  2.8,
