@@ -82,6 +82,13 @@ function updateLevelHud(){
   if (hudLevel) hudLevel.textContent = 'LEVEL ' + level;
 }
 
+// Points needed to complete the CURRENT level. The target grows 5% per level:
+// target(level) = pointsPerLevel * levelPointsGrowth^(level-1), rounded.
+function pointsToAdvance(){
+  return Math.round(CONFIG.pointsPerLevel *
+    Math.pow(CONFIG.levelPointsGrowth, level - 1));
+}
+
 // Knock every banana/broccoli currently on the field tumbling off the bottom
 // of the screen (used on level-up so the board clears without a pause).
 function knockdownField(){
@@ -360,9 +367,10 @@ function resolve(it){
     }
   }
   if (score < 0) score = 0;
-  // Completing a level (reaching pointsPerLevel) advances the difficulty; this
-  // repeats forever, each level a step faster. levelUp() resets the counter.
-  if (score >= CONFIG.pointsPerLevel){
+  // Completing a level (reaching the level's points target) advances the
+  // difficulty; this repeats forever, each level a step faster and needing 5%
+  // more points than the last. levelUp() resets the counter.
+  if (score >= pointsToAdvance()){
     levelUp();
   }
   hudScore.textContent = score;

@@ -24,10 +24,12 @@ const CONFIG = {
   // increments shrink as the speed climbs. Smaller tau = bigger early jumps.
   // speed(level) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(level-1)/tau).
   levelSpeedTau:    5,      // levels: time-constant of the per-level speed curve
-  pointsPerLevel:   100,    // points that complete a level; reaching it resets the
-                            // score to 1 and advances to the next (faster) level.
-                            // Play is continuous — the field is knocked down, not
-                            // frozen — when a level begins.
+  pointsPerLevel:   100,    // points that complete LEVEL 1; reaching the target
+                            // resets the score to 1 and advances to the next
+                            // (faster) level. Play is continuous — the field is
+                            // knocked down, not frozen — when a level begins.
+  levelPointsGrowth: 1.05,  // the points target grows 5% each level:
+                            // target(level) = pointsPerLevel * growth^(level-1)
   levelFlashTime:   1.4,    // seconds the new level's name flashes then fades at
                             // the centre of the play area (gameplay keeps running)
   spawnEveryStart:  0.70,   // seconds between spawn BURSTS during level 1
