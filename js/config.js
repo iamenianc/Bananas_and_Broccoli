@@ -47,10 +47,12 @@ const CONFIG = {
   decoyMissOffset:  140,    // px above/below baby a decoy is aimed (must
                             // exceed resolveRadius so it cleanly misses)
 
-  // baby (the player) sits near the LEFT edge. The sprite is anchored by
+  // baby (the player) sits LEFT of centre. The sprite is anchored by
   // its HEAD center at (babyHeadX, babyHeadY); incoming items resolve at the
   // baby's reaching hand, (babyHeadX+babyHandDX, babyHeadY+babyHandDY).
-  babyHeadX:        180,    // px: on-screen x of the baby's head center
+  babyHeadX:        360,    // px: on-screen x of the baby's head center (the gap
+                            // to the left edge was doubled 180->360 so the baby
+                            // sits a little closer to the centre of the field)
   babyHeadY:        315,    // px: vertical anchor; each pose's figure center is
                             // placed babyFigCenter below this, so the figure
                             // sits centred on screen (315+45 = 360 = VH/2)
@@ -66,21 +68,22 @@ const CONFIG = {
   babyBobReseedMax: 1.6,    // s: max time before a new random target is picked
   catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
                             // within this many px of its head; else stands neutral
-  // PLAYER VERTICAL MOVEMENT — the baby can be steered up/down the screen to
-  // dodge broccoli and reach for stray bananas. The head-center y is clamped to
-  // [babyMoveMin, babyMoveMax]; the idle bob still plays on top of it. Steering
-  // sets a target y that the figure eases toward (smooth for mouse/touch);
-  // keyboard nudges that target at babyMoveSpeed px/sec. On touch, only the left
-  // moveZoneFrac of the screen steers — the rest stays the swat/catch area.
-  babyMoveMin:      160,    // px: highest the baby's head center may travel
-  babyMoveMax:      540,    // px: lowest the baby's head center may travel
-  babyMoveSpeed:    720,    // px/sec vertical speed under keyboard control
-                            // (keeps keyboard lane-changes on par with mouse/touch)
-  babyMoveEase:     22,     // per-second approach rate toward the steer target;
-                            // higher = crisper, lower-latency dodges (still smooth)
+  // PLAYER VERTICAL MOVEMENT — FLAPPY style. The baby never steers freely:
+  // gravity constantly pulls it down and TAPPING flaps a small upward impulse.
+  // Chain taps to climb higher; there is NO active way to push down. The baby
+  // rests on the floor (babyMoveMax) and bonks the ceiling (babyMoveMin). Motion
+  // is velocity-based (smooth arcs) — it moves like a bird, not like a stone.
+  babyMoveMin:      160,    // px: ceiling — highest the baby's head center reaches
+  babyMoveMax:      540,    // px: floor — the baby rests here under gravity
+  gravity:          1600,   // px/sec^2 downward pull (y grows downward)
+  flapImpulse:      560,    // px/sec of upward speed added per tap (a small hop);
+                            // a single hop from the floor rises ~100px
+  flapRiseMax:      1000,   // px/sec cap on upward speed when taps are chained
+  maxFallSpeed:     1150,   // px/sec terminal downward speed
+  powerCentreEase:  12,     // per-second rate the 2x powered-up baby eases to centre
   moveZoneFrac:     0.4,    // left fraction of the screen used as the touch
-                            // move zone; the right 60% stays the swat/catch area so
-                            // the primary action keeps a generous touch target
+                            // flap pad; the right 60% stays the swat/catch area so
+                            // two thumbs can flap and swat at once
   // FOUR fixed launch points on the right edge. Each point is DEDICATED to a
   // single food type, so a given launch height always throws the same food.
   // yFrac is the spawn height as a fraction of world height. Two banana and

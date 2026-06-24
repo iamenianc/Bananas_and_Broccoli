@@ -34,8 +34,10 @@ NOTES
   - Landscape only: in a portrait window it shows a "turn sideways" prompt.
     On desktop just make the browser window wider than it is tall.
   - Hold mouse/finger = SWAT, release = CATCH.
-  - Move the baby UP/DOWN to dodge broccoli and reach stray bananas:
-    drag the LEFT side of the screen (touch), move the mouse, or use the
-    Up/Down arrow keys (W/S). Space also swats.
+  - TAP to FLAP the baby upward (flappy-bird style): chain taps to climb
+    higher, and gravity always pulls him back down — there's no way to push
+    down. Use this to dodge broccoli and reach stray bananas. Flap by tapping
+    the LEFT side of the screen (touch), clicking (mouse), or pressing
+    Up/W/Space. Hold Down/S to swat on the keyboard.
   - To install as an app: in Chrome/Edge, open the localhost URL, then
     use the install icon in the address bar.

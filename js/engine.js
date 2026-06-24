@@ -63,12 +63,12 @@ let lastT = 0;
 let babyBobY = 0;        // current vertical idle-drift offset (px) about the origin
 let babyBobTarget = 0;   // drift target the offset is easing toward
 let babyBobReseed = 0;   // seconds until a new random drift target is picked
-// player vertical movement: the head-center y the player steers (eased toward
-// babyTargetY). The idle bob is layered on top of this in babyPos().
-let babyCtrlY   = CONFIG.babyHeadY; // current player-controlled head-center y
-let babyTargetY = CONFIG.babyHeadY; // y the control eases toward (mouse/touch/keys)
-let keyUp = false, keyDown = false; // keyboard movement held-state
-let movePointerId = null;           // pointerId currently steering (touch left-zone)
+// player vertical movement (FLAPPY): the baby's head-center y plus a velocity.
+// Gravity pulls it down each frame; a tap flaps an upward impulse. The idle bob
+// is layered on top of babyCtrlY in babyPos().
+let babyCtrlY  = CONFIG.babyMoveMax; // current head-center y; starts on the floor
+let babyVelY   = 0;                  // vertical velocity (px/sec, + = downward)
+let swatPointerId = null;            // pointerId currently held in the swat zone
 
 function reset(){
   items = []; score = 0; level = 1; bananasEaten = 0; levelFlashTimer = 0;
@@ -79,8 +79,7 @@ function reset(){
   lastBroccoliEaten = 0;
   timeSinceLastBarrage = 50;
   babyBobY = 0; babyBobTarget = 0; babyBobReseed = 0;
-  babyCtrlY = CONFIG.babyHeadY; babyTargetY = CONFIG.babyHeadY;
-  keyUp = false; keyDown = false; movePointerId = null;
+  babyCtrlY = CONFIG.babyMoveMax; babyVelY = 0; swatPointerId = null;
   updateProgressHud();
   updateBroccoliHud();
   updatePowerMeter();
@@ -209,14 +208,10 @@ function updateBroccoliHud(){
 }
 
 function babyPos(){
-  // The baby stays at its normal left-edge home even while powered up; at the
-  // 2× buff scale the figure still clears every edge of the playfield.
-  // Vertically the player steers it (babyCtrlY) and the idle bob rides on top.
+  // The baby keeps its fixed x even while powered up; at the 2× buff scale the
+  // figure still clears every edge of the playfield. Vertically it flaps under
+  // gravity (babyCtrlY) and the gentle idle bob rides on top.
   return { x: CONFIG.babyHeadX, y: babyCtrlY + babyBobY };
-}
-
-function clampBabyY(y){
-  return Math.max(CONFIG.babyMoveMin, Math.min(CONFIG.babyMoveMax, y));
 }
 
 function babyHandPos(){
@@ -454,18 +449,21 @@ function update(dt){
   }
   babyBobY += (babyBobTarget - babyBobY) * Math.min(1, dt * CONFIG.babyBobEase);
 
-  // player vertical movement: keyboard nudges the steer target at a fixed
-  // speed; mouse/touch set it directly via the input handlers. The figure then
-  // eases toward that target so every input feels smooth. While powered up the
-  // baby doubles in size, so we steer it back to its centred home (where the big
-  // figure clears every edge) and resume player control when the buff ends.
+  // player vertical movement (FLAPPY): gravity constantly pulls the baby down;
+  // taps add an upward impulse via flap() in the input handlers. There is no
+  // active "down" input. The baby rests on the floor (babyMoveMax) and bonks the
+  // ceiling (babyMoveMin). While powered up the 2× baby is held at screen centre
+  // (where the big figure clears every edge); player control resumes after.
   if (powerupTimer > 0){
-    babyTargetY = CONFIG.babyHeadY;
+    babyVelY = 0;
+    babyCtrlY += (CONFIG.babyHeadY - babyCtrlY) * Math.min(1, dt * CONFIG.powerCentreEase);
   } else {
-    if (keyUp)   babyTargetY = clampBabyY(babyTargetY - CONFIG.babyMoveSpeed * dt);
-    if (keyDown) babyTargetY = clampBabyY(babyTargetY + CONFIG.babyMoveSpeed * dt);
+    babyVelY = Math.min(babyVelY + CONFIG.gravity * dt, CONFIG.maxFallSpeed);
+    babyCtrlY += babyVelY * dt;
+    if (babyCtrlY >= CONFIG.babyMoveMax){ babyCtrlY = CONFIG.babyMoveMax; babyVelY = 0; }
+    if (babyCtrlY <= CONFIG.babyMoveMin){ babyCtrlY = CONFIG.babyMoveMin;
+                                          if (babyVelY < 0) babyVelY = 0; }
   }
-  babyCtrlY += (babyTargetY - babyCtrlY) * Math.min(1, dt * CONFIG.babyMoveEase);
 
   if (barrageTimer > 0) {
     barrageTimer -= dt;
@@ -699,67 +697,61 @@ function gameOver(reason){
 }
 
 /* ---- input ----
-   Vertical movement steers the baby up/down to dodge broccoli and reach
-   bananas; swat/catch is unchanged (press = swat, release = catch).
-     • Touch  : the LEFT moveZoneFrac of the screen is a vertical steer pad
-                (drag a thumb up/down); the rest stays the swat/catch area, so
-                two thumbs can move and swat at once.
-     • Mouse  : the cursor's height always steers the baby; press = swat.
-     • Keyboard: ↑/W and ↓/S steer; Space swats while held.                  */
+   Vertical movement is FLAPPY: a tap flaps the baby up (chain taps to climb);
+   gravity does the rest. Swat/catch is unchanged (hold = swat, release = catch).
+     • Touch  : the LEFT moveZoneFrac of the screen is the flap pad (tap to hop);
+                the right part stays the swat/catch area, so two thumbs can flap
+                and swat at once.
+     • Mouse  : one button does both — each press flaps AND swats, release catches.
+     • Keyboard: ↑/W/Space flap; hold ↓/S to swat (release to catch).         */
 function beginSwat(){
   holding = true;
   swatHoldTimer = CONFIG.swatHoldDuration;
   yuckTimer = 0;
 }
-// Convert a screen (CSS px) y into the fixed virtual-world y, then clamp it to
-// the baby's travel range. Mirrors the resize() world transform.
-function steerToScreenY(clientY){
-  babyTargetY = clampBabyY((clientY - offY) / (scale || 1));
+// A tap flaps an upward impulse; chained taps stack toward flapRiseMax so the
+// baby climbs flappy-bird style. Ignored while powered up (the baby is centred).
+function flap(){
+  if (powerupTimer > 0) return;
+  babyVelY = Math.max(-CONFIG.flapRiseMax, babyVelY - CONFIG.flapImpulse);
 }
 function down(e){
   if (state === State.PLAY){
-    if (e.pointerType === 'touch' &&
-        e.clientX < window.innerWidth * CONFIG.moveZoneFrac){
-      movePointerId = e.pointerId;        // left zone: this thumb steers
-      steerToScreenY(e.clientY);
+    if (e.pointerType === 'touch'){
+      if (e.clientX < window.innerWidth * CONFIG.moveZoneFrac){
+        flap();                           // left zone: tap to hop
+      } else {
+        swatPointerId = e.pointerId;      // right zone: this thumb swats/catches
+        beginSwat();
+      }
     } else {
-      beginSwat();                        // right zone (touch) or any mouse press
+      flap();                             // mouse/pen: one press both flaps...
+      swatPointerId = e.pointerId;        // ...and swats (release to catch)
+      beginSwat();
     }
   }
   e.preventDefault();
 }
-function move(e){
-  if (state !== State.PLAY) return;
-  if (e.pointerType === 'touch'){
-    if (e.pointerId === movePointerId) steerToScreenY(e.clientY);
-  } else {
-    steerToScreenY(e.clientY);            // mouse always tracks cursor height
-  }
-}
 function up(e){
-  if (e.pointerId === movePointerId) movePointerId = null;
-  else holding = false;
+  if (e.pointerId === swatPointerId){ holding = false; swatPointerId = null; }
   e.preventDefault();
 }
 canvas.addEventListener('pointerdown', down, { passive: false });
-window.addEventListener('pointermove',   move, { passive: false });
 window.addEventListener('pointerup',     up,  { passive: false });
 window.addEventListener('pointercancel', up,  { passive: false });
 
-/* keyboard: arrow keys / WASD steer vertically, Space swats */
+/* keyboard: ↑/W/Space flap; hold ↓/S to swat */
 function keydown(e){
   if (state !== State.PLAY) return;
   switch (e.key){
-    case 'ArrowUp': case 'w': case 'W':   keyUp = true;  e.preventDefault(); break;
-    case 'ArrowDown': case 's': case 'S':  keyDown = true; e.preventDefault(); break;
-    case ' ': case 'Spacebar':             if (!e.repeat) beginSwat(); e.preventDefault(); break;
+    case 'ArrowUp': case 'w': case 'W':
+    case ' ': case 'Spacebar':            if (!e.repeat) flap(); e.preventDefault(); break;
+    case 'ArrowDown': case 's': case 'S':  beginSwat(); e.preventDefault(); break;
   }
 }
 function keyup(e){
   switch (e.key){
-    case 'ArrowUp': case 'w': case 'W':   keyUp = false; break;
-    case 'ArrowDown': case 's': case 'S':  keyDown = false; break;
-    case ' ': case 'Spacebar':             holding = false; break;
+    case 'ArrowDown': case 's': case 'S':  holding = false; break;
   }
 }
 window.addEventListener('keydown', keydown, { passive: false });
