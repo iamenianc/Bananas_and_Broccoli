@@ -1,0 +1,171 @@
+/* =========================================================
+   Layout & look only. All gameplay numbers live in
+   js/config.js; all drawing lives in js/art.js. Restyle
+   here freely without touching game logic.
+   ========================================================= */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+  width:100%; height:100%; overflow:hidden;
+  /* backdrop behind the letterboxed playfield (visible as margins on
+     screens whose aspect ratio differs from the 19.5:9 game world) */
+  background:#ececec; color:#000;
+  font-family: "Comic Neue", "Comic Sans MS", "Chalkboard SE", cursive;
+  touch-action:none; user-select:none; -webkit-user-select:none;
+}
+/* canvas fills the viewport; the white playfield is painted inside it at
+   the fixed virtual-world rect, so the backdrop shows through the margins */
+#game { position:fixed; inset:0; display:block; background:transparent; touch-action:none; }
+
+/* HUD */
+#hud {
+  position:fixed; top:0; left:0; right:0;
+  display:flex; justify-content:space-between; align-items:center;
+  /* keep the HUD clear of notches / rounded corners on modern phones */
+  padding:
+    calc(10px + env(safe-area-inset-top))
+    calc(18px + env(safe-area-inset-right))
+    10px
+    calc(18px + env(safe-area-inset-left));
+  font-size:clamp(16px,2.6vw,22px); font-weight:bold;
+  pointer-events:none; z-index:5;
+}
+.hud-spacer { width:1px; }
+#broccoli {
+  display: flex;
+  gap: 3px;
+  border: 3px solid #000;
+  padding: 3px;
+  background: #fff;
+  width: 180px;
+  height: 24px;
+  align-items: stretch;
+}
+#broccoli .b {
+  flex: 1;
+  background: #000;
+  transition: opacity .2s, background-color .2s;
+}
+#broccoli .b.left {
+  opacity: 1;
+  background: #5fae46; /* green when good */
+}
+#broccoli .b.lost {
+  background: #000;
+  opacity: 0.15;
+}
+#broccoli.warn {
+  border-color: #d90429;
+}
+#broccoli.warn .b.left {
+  background: #d90429; /* critical warning state */
+}
+#broccoli.flash {
+  animation: flash-red 0.35s ease-out;
+}
+#broccoli.flash .b.left {
+  background: #d90429 !important;
+}
+@keyframes flash-red {
+  0% {
+    border-color: #d90429;
+    background: #ffe5e5;
+  }
+  50% {
+    border-color: #d90429;
+    background: #ffb3b3;
+  }
+  100% {
+    border-color: #000;
+    background: #fff;
+  }
+}
+#mode  { opacity:.55; font-size:14px; }
+
+/* Power-up charge meter — appears only while charging (after the disco ball),
+   gaining one segment per clean second toward the buff. */
+#power {
+  position:fixed; left:50%; transform:translateX(-50%);
+  top:calc(46px + env(safe-area-inset-top));
+  display:none; gap:3px; align-items:stretch;
+  border:3px solid #000; background:#fff; padding:3px;
+  width:240px; height:18px; z-index:6; pointer-events:none;
+}
+#power.show { display:flex; }
+#power::before {
+  content:"★"; position:absolute; left:-22px; top:50%;
+  transform:translateY(-50%); font-size:16px; color:#f5a623;
+}
+#power .p {
+  flex:1; background:#000; opacity:.15;
+  transition:opacity .15s, background-color .15s;
+}
+#power .p.on { opacity:1; background:#f5a623; } /* amber fill */
+
+/* Overlay screens (start / gameover / rotate) */
+.overlay {
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.96); text-align:center; padding:24px;
+}
+.overlay.hidden { display:none; }
+.overlay h1 { font-size:clamp(28px,7vw,52px); margin-bottom:6px; letter-spacing:1px; }
+.overlay p  { font-size:clamp(14px,3.2vw,18px); max-width:520px; line-height:1.5; margin-bottom:8px; opacity:.8; }
+.overlay .big { font-size:clamp(20px,5vw,34px); margin:14px 0; font-weight:bold; }
+.btn {
+  margin-top:18px; border:3px solid #000; background:#fff; color:#000;
+  font:inherit; font-size:20px; font-weight:bold; padding:14px 38px;
+  cursor:pointer; letter-spacing:1px;
+}
+.btn:active { background:#000; color:#fff; }
+
+/* Rotate prompt: only shows in portrait */
+#rotate { display:none; }
+@media (orientation:portrait) {
+  #rotate { display:flex; }
+  .playfield-overlay { display:none !important; }
+}
+.rotate-icon { font-size:64px; margin-bottom:16px; animation:rock 1.6s ease-in-out infinite; }
+@keyframes rock { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
+
+/* Difficulty level readout — pinned in the bottom-left corner */
+#level {
+  position:fixed;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  left:calc(18px + env(safe-area-inset-left));
+  font-size:clamp(14px,2.4vw,20px); font-weight:bold; letter-spacing:1px;
+  opacity:.7; z-index:5; pointer-events:none;
+}
+
+/* Level-progress bar — a vertical gauge in the bottom-right corner that fills
+   from the bottom up as the score climbs toward the next level's target. */
+#progress {
+  position:fixed;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  right:calc(18px + env(safe-area-inset-right));
+  width:18px; height:160px;
+  border:3px solid #000; background:#fff; padding:3px;
+  display:flex; align-items:flex-end;       /* fill grows upward from the base */
+  z-index:5; pointer-events:none;
+}
+#progressFill {
+  display:block; width:100%; height:0%;
+  background:#5fae46;                        /* green, matching the lives bar */
+  transition:height .15s ease-out;
+}
+/* evenly-spaced tick notches so the bar reads as a scale */
+#progress::after {
+  content:""; position:absolute; left:3px; right:3px; top:3px; bottom:3px;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    to top,
+    transparent 0, transparent calc(25% - 1px),
+    rgba(0,0,0,.30) calc(25% - 1px), rgba(0,0,0,.30) 25%);
+}
+/* current level (bottom) and next level (top) labels beside the bar */
+.progress-label {
+  position:absolute; right:100%; margin-right:6px;
+  font-size:12px; font-weight:bold; letter-spacing:.5px; line-height:1;
+  opacity:.7; white-space:nowrap;
+}
+#progressTop { top:-1px; }
+#progressBot { bottom:-1px; }
