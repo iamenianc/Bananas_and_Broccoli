@@ -95,8 +95,7 @@ const CONFIG = {
   // 6. SCORING, LIVES & COOLDOWNS
   // ==========================================
   pointsPerBanana: 2,       // Points awarded for eating a banana
-  bananaSwatPenalty: 2,     // Score deducted when swatting a banana away
-  bananaSwatCooldown: 0.5,  // Cooldown (sec) before another banana swat penalty applies
+  bananaSwatPenalty: 2,     // Score deducted when swatting a banana away (points only — no life loss)
   penaltyPoints: 0,         // Score deducted when eating broccoli
   broccoliTapPoints: 2,     // Points awarded for swatting broccoli away with a precise TAP
   broccoliEatenLimit: 10,   // Total damage allowed before Game Over (life bar capacity)

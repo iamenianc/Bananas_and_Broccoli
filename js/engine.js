@@ -63,7 +63,6 @@ let lastT = 0;
 let babyCtrlY = CONFIG.babyMoveMax; // current head-center y; starts on the floor
 let babyVelY = 0;                  // vertical velocity (px/sec, + = downward)
 let swatPointerId = null;            // pointerId currently held in the swat zone
-let bananaSwatCooldownTimer = 0;     // cooldown timer for banana swat penalties
 
 function reset() {
   items = []; score = 0; level = 1; bananasEaten = 0; levelFlashTimer = CONFIG.levelFlashTime;
@@ -74,7 +73,6 @@ function reset() {
   lastBroccoliEaten = 0;
   timeSinceLastBarrage = 50;
   babyCtrlY = CONFIG.babyMoveMax; babyVelY = 0; swatPointerId = null;
-  bananaSwatCooldownTimer = 0;
   updateProgressHud();
   updateBroccoliHud();
   updatePowerMeter();
@@ -391,24 +389,13 @@ function resolve(it) {
     }
   } else if (it.type === 'banana') {
     if (swatting) {
-      // Always lose score and power-up charge when swatting a banana
+      // Swatting a banana costs POINTS (and the power-up charge) only — it no
+      // longer drains a life, so it can never end the game on its own.
       score -= CONFIG.bananaSwatPenalty;
       loseCharge();
-
-      if (bananaSwatCooldownTimer <= 0) {
-        // Health/life loss only applies if not currently on cooldown
-        broccoliEaten++;
-        updateBroccoliHud();
-        bananaSwatCooldownTimer = CONFIG.bananaSwatCooldown;
-      }
       it.flying = true;
       it.peeled = true;
       ricochet(it);
-      if (broccoliEaten >= CONFIG.broccoliEatenLimit) {
-        if (score < 0) score = 0;
-        updateProgressHud();
-        return 'you deflected too many bananas :(';
-      }
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana;
@@ -495,7 +482,6 @@ function update(dt) {
 
   if (swatHoldTimer > 0) swatHoldTimer -= dt;
   if (levelFlashTimer > 0) levelFlashTimer -= dt;  // fades the level-name flash
-  if (bananaSwatCooldownTimer > 0) bananaSwatCooldownTimer -= dt;
 
   const hb = babyHitbox();
   const sp = currentSpeed();
