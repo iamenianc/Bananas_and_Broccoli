@@ -127,17 +127,16 @@ function knockdownField(){
 
 // Advance to the next level: bump difficulty and reset the per-level score to 1.
 // Play is CONTINUOUS — no freeze — but every banana/broccoli on the field is
-// knocked down so the board clears as the next, faster level begins. Any active
-// buff/charge is cancelled.
+// knocked down so the board clears as the next, faster level begins. An active
+// power-up buff or in-progress charge carries over (it is NOT cancelled).
 function levelUp(){
   level++;
   score = 1;
-  powerupTimer = 0;                 // cancel any active buff
-  charging = false; chargeTimer = 0;// and any charge in progress
+  // An active power-up buff and any in-progress charge are intentionally LEFT
+  // RUNNING across a level-up — leveling up no longer cancels the power-up.
   knockdownField();                 // sweep the field clear (no pause)
   levelFlashTimer = CONFIG.levelFlashTime;  // flash the new level's name
   updateLevelHud();
-  updatePowerMeter();               // hide the charge meter if it was showing
 }
 
 // ---- power-up charge: catch the disco ball, then survive powerupChargeTime

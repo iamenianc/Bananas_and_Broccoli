@@ -141,7 +141,10 @@ html, body {
 #progress {
   position:fixed;
   bottom:calc(12px + env(safe-area-inset-bottom));
-  right:calc(18px + env(safe-area-inset-right));
+  /* Inset from the right edge to mirror the baby's gap on the left: the baby's
+     head sits at babyHeadX/worldW = 360/1560 ≈ 23% in from the left, so the bar
+     sits ~23% in from the right (matches when the world fills the viewport). */
+  right:calc(23vw + env(safe-area-inset-right));
   width:18px; height:160px;
   border:3px solid #000; background:#fff; padding:3px;
   display:flex; align-items:flex-end;       /* fill grows upward from the base */

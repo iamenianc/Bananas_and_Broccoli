@@ -359,29 +359,32 @@ const ART = {
     ctx.restore();
   },
 
-  // New-level name that flashes in then fades at the centre of the play area
-  // WITHOUT pausing play. `timer` counts down from `total`: the text pops/flashes
-  // bright over the first sliver of time, then eases away to nothing.
+  // New-level name that fades in then out at the centre of the play area WITHOUT
+  // pausing play. Deliberately QUIET — small, semi-transparent and barely glowing
+  // so it reads as a gentle cue, not a loud, distracting interruption. `timer`
+  // counts down from `total`.
   levelFlash(ctx, w, h, level, timer, total){
     total = total || 1;
-    const p = Math.max(0, Math.min(1, 1 - timer / total));   // 0..1 through the flash
-    // alpha: snap up over the first 12%, then fade out across the rest
-    const alpha = p < 0.12 ? p / 0.12 : 1 - (p - 0.12) / 0.88;
+    const p = Math.max(0, Math.min(1, 1 - timer / total));   // 0..1 through the cue
+    // alpha: ease up over the first 20%, then fade out across the rest, and cap
+    // it low so the label never dominates the screen.
+    const rise = p < 0.2 ? p / 0.2 : 1 - (p - 0.2) / 0.8;
+    const alpha = Math.max(0, Math.min(1, rise)) * 0.45;
     if (alpha <= 0) return;
-    const pop = Math.min(1, p / 0.18);                       // quick grow-in
-    const scale = 0.65 + 0.35 * (1 - Math.pow(1 - pop, 3)) + 0.05 * p;
+    const pop = Math.min(1, p / 0.25);                       // soft grow-in
+    const scale = 0.92 + 0.08 * (1 - Math.pow(1 - pop, 3));
     ctx.save();
-    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.globalAlpha = alpha;
     ctx.translate(w / 2, h / 2);
     ctx.scale(scale, scale);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '900 150px "Comic Neue", "Comic Sans MS", cursive';
+    ctx.font = '900 80px "Comic Neue", "Comic Sans MS", cursive';
     ctx.lineJoin = 'round';
-    // soft glow behind the text for the "flash"
-    ctx.shadowColor = 'rgba(255,210,63,0.9)';
-    ctx.shadowBlur = 40;
-    ctx.lineWidth = 14;
+    // faint glow only
+    ctx.shadowColor = 'rgba(255,210,63,0.45)';
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 6;
     ctx.strokeStyle = '#000';
     ctx.strokeText('LEVEL ' + level, 0, 0);
     ctx.shadowBlur = 0;
