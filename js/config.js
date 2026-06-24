@@ -98,8 +98,8 @@ const CONFIG = {
   // RULES (single source of truth, mirrored in resolve()):
   //  - Banana    + released (catching)  => +pointsPerBanana (×2 while powered up);
   //                                        also restores bananaLifeRestorePct of life
-  //  - Banana    + holding  (rejecting) => -bananaSwatPenalty; banana flies off
-  //                                        half-peeled (and costs a life at 0 pts)
+  //  - Banana    + holding  (rejecting) => -bananaSwatPenalty AND always costs a
+  //                                        life point; banana flies off half-peeled
   //  - Broccoli  + holding  (swatting)  => safe, swatted away (good)
   //  - Broccoli  + released (eaten)     => costs a life toward broccoliEatenLimit
   //                                        (harmless and worth nothing while powered up)
@@ -139,7 +139,7 @@ const CONFIG = {
 
   // broccoli volley: a rare triple-shot of broccoli fired in quick succession
   // at double speed (replaces a normal spawn tick when it triggers).
-  volleyChance:     0.005,  // chance per spawn tick of a broccoli volley (0.5%)
+  volleyChance:     0.02,   // chance per spawn tick of a broccoli volley (2%)
   volleyCount:      3,      // broccoli launched in the volley
   volleySpeedMult:  2,      // speed multiplier for volley broccoli
   volleyGap:        0.25,   // seconds between successive shots in the volley

@@ -365,19 +365,19 @@ function resolve(it){
     }
   } else if (it.type === 'banana'){
     if (swatting){
-      if (score === 0) {
-        broccoliEaten++;
-        updateBroccoliHud();
-        if (broccoliEaten >= CONFIG.broccoliEatenLimit) {
-          updateProgressHud();
-          return 'Deflected a banana at 0 points with no lives left.';
-        }
-      }
+      // deflecting (swatting) a banana ALWAYS costs a life point
       score -= CONFIG.bananaSwatPenalty;
+      broccoliEaten++;
+      updateBroccoliHud();
       it.flying = true;
       it.peeled = true;
-      loseCharge();                     // losing points cancels the charge
+      loseCharge();                     // losing a life cancels the charge
       ricochet(it);
+      if (broccoliEaten >= CONFIG.broccoliEatenLimit){
+        if (score < 0) score = 0;
+        updateProgressHud();
+        return 'you deflected too many bananas :(';
+      }
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
