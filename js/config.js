@@ -74,10 +74,13 @@ const CONFIG = {
   // moveZoneFrac of the screen steers — the rest stays the swat/catch area.
   babyMoveMin:      160,    // px: highest the baby's head center may travel
   babyMoveMax:      540,    // px: lowest the baby's head center may travel
-  babyMoveSpeed:    640,    // px/sec vertical speed under keyboard control
-  babyMoveEase:     16,     // per-second approach rate toward the steer target
-  moveZoneFrac:     0.5,    // left fraction of the screen used as the touch
-                            // move zone (the right part remains swat/catch)
+  babyMoveSpeed:    720,    // px/sec vertical speed under keyboard control
+                            // (keeps keyboard lane-changes on par with mouse/touch)
+  babyMoveEase:     22,     // per-second approach rate toward the steer target;
+                            // higher = crisper, lower-latency dodges (still smooth)
+  moveZoneFrac:     0.4,    // left fraction of the screen used as the touch
+                            // move zone; the right 60% stays the swat/catch area so
+                            // the primary action keeps a generous touch target
   // FOUR fixed launch points on the right edge. Each point is DEDICATED to a
   // single food type, so a given launch height always throws the same food.
   // yFrac is the spawn height as a fraction of world height. Two banana and
