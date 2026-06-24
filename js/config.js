@@ -44,12 +44,13 @@ const CONFIG = {
   burstMin:         2,      // min items per burst
   burstMax:         3,      // max items per burst
   decoyChance:      0.45,   // chance any given item in a burst is a decoy
-  decoyMissOffset:  140,    // px above/below baby a decoy is aimed (must
-                            // exceed resolveRadius so it cleanly misses)
+  decoyMissOffset:  140,    // px above/below the hitbox centre a decoy is aimed
+                            // (exceeds the band half-height so it cleanly misses)
 
-  // baby (the player) sits LEFT of centre. The sprite is anchored by
-  // its HEAD center at (babyHeadX, babyHeadY); incoming items resolve at the
-  // baby's reaching hand, (babyHeadX+babyHandDX, babyHeadY+babyHandDY).
+  // baby (the player) sits LEFT of centre. The sprite is anchored by its HEAD
+  // center at (babyHeadX, babyHeadY); incoming food resolves against the baby's
+  // upper-body HITBOX — a vertical band from the shoulders to the top of the
+  // head at the head column (see hitTopDY/hitBotDY below).
   babyHeadX:        360,    // px: on-screen x of the baby's head center (the gap
                             // to the left edge was doubled 180->360 so the baby
                             // sits a little closer to the centre of the field)
@@ -58,8 +59,14 @@ const CONFIG = {
                             // sits centred on screen (315+45 = 360 = VH/2)
   babyFigCenter:    45,     // px the figure center sits below the anchor y
   babyHeadPx:       108,    // target on-screen head height (uniform across poses)
-  babyHandDX:       64,     // px right of head center where items are caught
-  babyHandDY:       18,     // px below head center where items are caught
+  // HITBOX — food collides/resolves against the baby's upper body: a vertical
+  // band from the SHOULDERS up to the TOP OF THE HEAD, centred on the head
+  // column (babyHeadX). Offsets are world px from the baby anchor (babyPos) and
+  // scale with the baby during the power-up. Food resolves when it reaches the
+  // column (within resolveRadius horizontally) and its centre is inside the
+  // band; food passing above the head or below the shoulders sails past/misses.
+  hitTopDY:        -58,     // px: top of the head, relative to the baby anchor y
+  hitBotDY:         70,     // px: the shoulders, relative to the baby anchor y
   // gentle idle motion: the baby drifts up/down a few px at random about its
   // centred origin (eases toward a fresh random target every reseed interval).
   babyBobAmp:       16,     // px: max drift from the origin

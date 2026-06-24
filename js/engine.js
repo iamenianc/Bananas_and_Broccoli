@@ -214,11 +214,17 @@ function babyPos(){
   return { x: CONFIG.babyHeadX, y: babyCtrlY + babyBobY };
 }
 
-function babyHandPos(){
-  const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
+// The baby's collision/catch HITBOX: a vertical band from the shoulders up to
+// the top of the head, at the head column. Returns its x, top/bottom edges and
+// centre y (cy, used as the aim target). The band scales with the baby while
+// powered up. Food resolves when it reaches the column and its centre is in
+// [top, bot]; food above the head or below the shoulders misses.
+function babyHitbox(){
+  const s = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   const p = babyPos();
-  return { x: p.x + CONFIG.babyHandDX * babyScale,
-           y: p.y + CONFIG.babyHandDY * babyScale };
+  const top = p.y + CONFIG.hitTopDY * s;
+  const bot = p.y + CONFIG.hitBotDY * s;
+  return { x: p.x, top, bot, cy: (top + bot) / 2 };
 }
 
 function currentSpeed(){
@@ -247,13 +253,13 @@ function spawnOne(sy, type, isDecoy, opts){
   opts = opts || {};
   const speedMult = opts.speedMult || 1;
   const r = CONFIG.itemRadius;
-  const target = babyHandPos();
+  const target = babyHitbox();
   const sx = VW + r;
-  // real items aim at the target (baby's hands); decoys aim at a point well above/below
-  // the catch zone so they sail past and miss.
+  // real items aim at the hitbox centre; decoys aim at a point well above/below
+  // the band so they sail past and miss.
   const aimY = isDecoy
-    ? target.y + (Math.random()<0.5 ? -1 : 1) * CONFIG.decoyMissOffset
-    : target.y;
+    ? target.cy + (Math.random()<0.5 ? -1 : 1) * CONFIG.decoyMissOffset
+    : target.cy;
   const dx = target.x - sx, dy = aimY - sy;
   const len = Math.hypot(dx, dy) || 1;
   const sp = currentSpeed() * speedMult;
@@ -286,11 +292,11 @@ function spawnOne(sy, type, isDecoy, opts){
 // Predicted arrival times (seconds from now) of all incoming real items,
 // used to space out new spawns so hits don't land simultaneously.
 function incomingArrivals(sp){
-  const target = babyHandPos();
+  const target = babyHitbox();
   const out = [];
   for (const it of items){
     if (it.resolved || it.flying || it.decoy) continue;
-    const d = Math.hypot(it.x - target.x, it.y - target.y);
+    const d = Math.hypot(it.x - target.x, it.y - target.cy);
     out.push((it.delay > 0 ? it.delay : 0) + d/sp);
   }
   return out;
@@ -486,7 +492,7 @@ function update(dt){
   if (swatHoldTimer > 0) swatHoldTimer -= dt;
   if (levelFlashTimer > 0) levelFlashTimer -= dt;  // fades the level-name flash
 
-  const target = babyHandPos();
+  const hb = babyHitbox();
   const sp = currentSpeed();
   const swatting = holding || swatHoldTimer > 0;
   for (const it of items){
@@ -504,8 +510,8 @@ function update(dt){
     if (it.delay > 0){ it.delay -= dt; continue; }
 
     if (powerupTimer > 0 && it.type === 'banana') {
-      const dx = target.x - it.x;
-      const dy = target.y - it.y;
+      const dx = hb.x - it.x;
+      const dy = hb.cy - it.y;
       const len = Math.hypot(dx, dy) || 1;
       it.ux = dx / len;
       it.uy = dy / len;
@@ -520,8 +526,11 @@ function update(dt){
     it.x += it.vx * dt;
     it.y += it.vy * dt;
     if (it.type === 'powerup') it.rot = (it.rot || 0) + it.spin * dt;
-    // resolve when it reaches the baby's hands
-    if (Math.hypot(it.x - target.x, it.y - target.y) <= CONFIG.resolveRadius){
+    // resolve when it reaches the baby's column (within resolveRadius) AND its
+    // centre overlaps the shoulders→top-of-head band; otherwise it sails past
+    // above the head / below the shoulders and misses.
+    if (Math.abs(it.x - hb.x) <= CONFIG.resolveRadius &&
+        it.y >= hb.top && it.y <= hb.bot){
       const reason = resolve(it);
       if (reason){ gameOver(reason); return; }
     }
