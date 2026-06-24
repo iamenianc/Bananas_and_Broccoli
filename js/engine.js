@@ -229,7 +229,7 @@ function currentSpeed(){
   if (barrageTimer > 0) {
     base *= CONFIG.barrageSpeedMult;
   }
-  return powerupTimer > 0 ? base * CONFIG.powerupSpeedMult : base;
+  return base;
 }
 function currentSpawnInterval(){
   if (barrageTimer > 0) {
@@ -237,9 +237,6 @@ function currentSpawnInterval(){
   }
   let interval = Math.max(CONFIG.spawnEveryMin,
     CONFIG.spawnEveryStart - CONFIG.spawnRampPerLevel*(level - 1));
-  // during the buff, items fly powerupSpeedMult× faster, so spawn them that
-  // much more often to keep the screen density rising in line with the speed.
-  if (powerupTimer > 0) interval /= CONFIG.powerupSpeedMult;
   return interval;
 }
 
@@ -257,9 +254,10 @@ function spawnOne(sy, type, isDecoy, opts){
   if (type === 'banana'){
     const ang = (Math.random()*2 - 1) * CONFIG.bananaDriftMaxDeg * Math.PI/180;
     const ux = -Math.cos(ang), uy = Math.sin(ang);
+    const delay = (opts.delay !== undefined) ? opts.delay : (Math.random() * CONFIG.bananaMaxSpawnDelay);
     items.push({
       x:sx, y:sy, r, type, resolved:false, decoy:false,
-      delay: opts.delay || 0, speedMult,
+      delay, speedMult,
       ux, uy, vx:ux*sp, vy:uy*sp
     });
     return;
@@ -425,7 +423,7 @@ function resolve(it){
       }
     } else {
       it.resolved = true;
-      score += CONFIG.pointsPerBanana * (powerupTimer > 0 ? 2 : 1);
+      score += CONFIG.pointsPerBanana;
       bananasEaten++;                   // one banana eaten (cumulative across levels)
       // eating a banana also restores 1% of the life bar
       if (broccoliEaten > 0){
@@ -490,16 +488,11 @@ function update(dt){
   // active "down" input. The baby rests on the floor (babyMoveMax) and bonks the
   // ceiling (babyMoveMin). While powered up the 2× baby is held at screen centre
   // (where the big figure clears every edge); player control resumes after.
-  if (powerupTimer > 0){
-    babyVelY = 0;
-    babyCtrlY += (CONFIG.babyHeadY - babyCtrlY) * Math.min(1, dt * CONFIG.powerCentreEase);
-  } else {
-    babyVelY = Math.min(babyVelY + CONFIG.gravity * dt, CONFIG.maxFallSpeed);
-    babyCtrlY += babyVelY * dt;
-    if (babyCtrlY >= CONFIG.babyMoveMax){ babyCtrlY = CONFIG.babyMoveMax; babyVelY = 0; }
-    if (babyCtrlY <= CONFIG.babyMoveMin){ babyCtrlY = CONFIG.babyMoveMin;
-                                          if (babyVelY < 0) babyVelY = 0; }
-  }
+  babyVelY = Math.min(babyVelY + CONFIG.gravity * dt, CONFIG.maxFallSpeed);
+  babyCtrlY += babyVelY * dt;
+  if (babyCtrlY >= CONFIG.babyMoveMax){ babyCtrlY = CONFIG.babyMoveMax; babyVelY = 0; }
+  if (babyCtrlY <= CONFIG.babyMoveMin){ babyCtrlY = CONFIG.babyMoveMin;
+                                        if (babyVelY < 0) babyVelY = 0; }
 
   if (barrageTimer > 0) {
     barrageTimer -= dt;
@@ -539,13 +532,7 @@ function update(dt){
     // held back briefly to stagger its arrival — wait off-screen
     if (it.delay > 0){ it.delay -= dt; continue; }
 
-    if (powerupTimer > 0 && it.type === 'banana') {
-      const dx = hb.x - it.x;
-      const dy = hb.cy - it.y;
-      const len = Math.hypot(dx, dy) || 1;
-      it.ux = dx / len;
-      it.uy = dy / len;
-    }
+
 
     // incoming item: keep moving along the fixed aim direction. Per-item
     // speedMult keeps volley broccoli flying at their faster pace every frame
@@ -559,8 +546,12 @@ function update(dt){
     // resolve when it reaches the baby's column (within resolveRadius) AND its
     // centre overlaps the shoulders→top-of-head band; otherwise it sails past
     // above the head / below the shoulders and misses.
+    const isPowerup = it.type === 'powerup';
+    const scaleFactor = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
+    const bottomBound = isPowerup ? (hb.bot + 150 * scaleFactor) : hb.bot;
+
     if (Math.abs(it.x - hb.x) <= CONFIG.resolveRadius &&
-        it.y >= hb.top && it.y <= hb.bot){
+        it.y >= hb.top && it.y <= bottomBound){
       const reason = resolve(it);
       if (reason){ gameOver(reason); return; }
     }
@@ -633,12 +624,7 @@ function update(dt){
   if (powerupTimer > 0){
     powerupTimer -= dt;
     if (powerupTimer <= 0){
-      // buff just ended: wipe the board so the player gets a beat to reset
-      // (the baby also drops back to its left-edge home next frame), and hold
-      // off the next spawn by one normal interval for the breather.
       powerupTimer = 0;
-      items = [];
-      spawnTimer = currentSpawnInterval();
     }
   }
 }
@@ -658,7 +644,7 @@ function render(){
   // buff is active, easing out over the final second so it doesn't snap off.
   // Both run before sprites, so only the background changes colour.
   const party = powerupTimer > 0 ? Math.min(1, powerupTimer) : 0;
-  ART.background(ctx, VW, VH, elapsed, party);
+  ART.background(ctx, VW, VH, elapsed, 0);
   if (party > 0){
     ART.disco(ctx, VW, VH, elapsed, party);
   }
@@ -751,7 +737,6 @@ function beginSwat(){
 // A tap flaps an upward impulse; chained taps stack toward flapRiseMax so the
 // baby climbs flappy-bird style. Ignored while powered up (the baby is centred).
 function flap(){
-  if (powerupTimer > 0) return;
   babyVelY = Math.max(-CONFIG.flapRiseMax, babyVelY - CONFIG.flapImpulse);
 }
 function down(e){
