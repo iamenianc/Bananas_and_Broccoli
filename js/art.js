@@ -78,7 +78,7 @@ const BABY_META = {
   catch:   { hcx:178.5, hcy:153.0, headH:294, fcy:274.5 },
   swat:    { hcx:168.0, hcy:151.5, headH:303, fcy:284.5 },
   eating:  { hcx:174.0, hcy:151.0, headH:302, fcy:275.5 },
-  eating2: { hcx:114.4, hcy:101.0, headH:200, fcy:186.5 },
+  eating2: { hcx:322.8, hcy:280.1, headH:560.2, fcy:511.1 },
   yuck:    { hcx:158.5, hcy:144.5, headH:277, fcy:284.5 },
   neutral: { hcx:164.5, hcy:151.0, headH:302, fcy:306.5 },
 };

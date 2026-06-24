@@ -119,6 +119,7 @@ const CONFIG = {
   // TAP (released, riding the swat-tolerance window) —
   // a press-and-hold swat is safe but scores nothing
   bananaSwatPenalty: 1,    // points lost for swatting a banana away (NOT a loss)
+  bananaSwatCooldown: 0.5, // seconds of cooldown before another banana swat penalty can be applied
   broccoliEatenLimit: 10,   // total life points; losing this many = game over
   bananaLifeRestorePct: 0.02, // each banana eaten restores this fraction of the
   // full life bar (1% of broccoliEatenLimit)
@@ -157,7 +158,7 @@ const CONFIG = {
   // powerupDuration seconds, then the board is wiped clear so the player gets a
   // beat to reset. Deliberately rare.
   powerupChance: 0.03,   // fraction of real-item spawns that become powerups
-  powerupDuration: 8,      // seconds the buff lasts
+  powerupDuration: 10,      // seconds the buff lasts
   eatFrameTime: 0.30,   // seconds each laughing frame holds while the two
   // baby-eat poses alternate during the buff
   powerupSpinRate: 3,      // rad/sec the disco ball spins while incoming

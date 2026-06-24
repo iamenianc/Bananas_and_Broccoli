@@ -67,6 +67,7 @@ let babyBobReseed = 0;   // seconds until a new random drift target is picked
 let babyCtrlY  = CONFIG.babyMoveMax; // current head-center y; starts on the floor
 let babyVelY   = 0;                  // vertical velocity (px/sec, + = downward)
 let swatPointerId = null;            // pointerId currently held in the swat zone
+let bananaSwatCooldownTimer = 0;     // cooldown timer for banana swat penalties
 
 function reset(){
   items = []; score = 0; level = 1; bananasEaten = 0; levelFlashTimer = 0;
@@ -78,6 +79,7 @@ function reset(){
   timeSinceLastBarrage = 50;
   babyBobY = 0; babyBobTarget = 0; babyBobReseed = 0;
   babyCtrlY = CONFIG.babyMoveMax; babyVelY = 0; swatPointerId = null;
+  bananaSwatCooldownTimer = 0;
   updateProgressHud();
   updateBroccoliHud();
   updatePowerMeter();
@@ -408,13 +410,18 @@ function resolve(it){
     }
   } else if (it.type === 'banana'){
     if (swatting){
-      // deflecting (swatting) a banana ALWAYS costs a life point
+      // Always lose score and power-up charge when swatting a banana
       score -= CONFIG.bananaSwatPenalty;
-      broccoliEaten++;
-      updateBroccoliHud();
+      loseCharge();
+
+      if (bananaSwatCooldownTimer <= 0) {
+        // Health/life loss only applies if not currently on cooldown
+        broccoliEaten++;
+        updateBroccoliHud();
+        bananaSwatCooldownTimer = CONFIG.bananaSwatCooldown;
+      }
       it.flying = true;
       it.peeled = true;
-      loseCharge();                     // losing a life cancels the charge
       ricochet(it);
       if (broccoliEaten >= CONFIG.broccoliEatenLimit){
         if (score < 0) score = 0;
@@ -514,6 +521,7 @@ function update(dt){
 
   if (swatHoldTimer > 0) swatHoldTimer -= dt;
   if (levelFlashTimer > 0) levelFlashTimer -= dt;  // fades the level-name flash
+  if (bananaSwatCooldownTimer > 0) bananaSwatCooldownTimer -= dt;
 
   const hb = babyHitbox();
   const sp = currentSpeed();
@@ -531,6 +539,28 @@ function update(dt){
 
     // held back briefly to stagger its arrival — wait off-screen
     if (it.delay > 0){ it.delay -= dt; continue; }
+
+    // Gravitational pull: objects close to the baby gravitate toward the hitzone center (broccoli excluded, only before passing the baby's plane)
+    if (it.type !== 'broccoli' && it.x > hb.x) {
+      const gravRange = 320;
+      const gdx = hb.x - it.x;
+      const gdy = hb.cy - it.y;
+      const gdist = Math.hypot(gdx, gdy) || 1;
+      if (gdist < gravRange) {
+        let pullForce = 6.5;
+        if (powerupTimer > 0) {
+          pullForce *= 2.5;
+        }
+        const pull = (1 - gdist / gravRange) * pullForce * dt;
+        const targetUx = gdx / gdist;
+        const targetUy = gdy / gdist;
+        it.ux += (targetUx - it.ux) * Math.min(1, pull);
+        it.uy += (targetUy - it.uy) * Math.min(1, pull);
+        const uLen = Math.hypot(it.ux, it.uy) || 1;
+        it.ux /= uLen;
+        it.uy /= uLen;
+      }
+    }
 
 
 
