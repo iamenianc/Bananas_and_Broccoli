@@ -95,7 +95,7 @@ const CONFIG = {
   // 6. SCORING, LIVES & COOLDOWNS
   // ==========================================
   pointsPerBanana: 2,       // Points awarded for eating a banana
-  bananaSwatPenalty: 1,     // Score deducted when swatting a banana away
+  bananaSwatPenalty: 2,     // Score deducted when swatting a banana away
   bananaSwatCooldown: 0.5,  // Cooldown (sec) before another banana swat penalty applies
   penaltyPoints: 0,         // Score deducted when eating broccoli
   broccoliTapPoints: 2,     // Points awarded for swatting broccoli away with a precise TAP
@@ -125,7 +125,7 @@ const CONFIG = {
   barrageChancePerSec: 0.08,// Probability per second of triggering a barrage after cooldown
 
   // Broccoli Volley
-  volleyChance: 0.09,       // Probability of triggering a volley on any spawn tick
+  volleyChance: 0.06,       // Probability of triggering a volley on any spawn tick
   volleyCount: 3,           // Number of broccoli items launched in the volley
   volleySpeedMult: 2,       // Speed multiplier of volley items
   volleyGap: 0.17,          // Launch gap (sec) between successive volley items
@@ -133,7 +133,7 @@ const CONFIG = {
   // ==========================================
   // 8. VISUAL ASSETS STYLING
   // ==========================================
-  foodSpriteScale: 2.2,     // Scaling multiplier for drawn item sprites
+  foodSpriteScale: 2.4,     // Scaling multiplier for drawn item sprites
   bananaFill: '#ffd23f',     // Fallback color for banana vector fills
   broccoliFill: '#5fae46',  // Fallback color for broccoli vector fills
 };
