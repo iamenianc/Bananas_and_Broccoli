@@ -113,8 +113,8 @@ function levelUp() {
 }
 
 // ---- power-up charge: catch the disco ball, then survive powerupChargeTime
-// seconds with no energy loss (broccoli eaten) and no points loss. The meter
-// fills one segment per second; any loss cancels the attempt.
+// seconds without taking broccoli damage (eating a broccoli). The meter fills
+// one segment per second; only broccoli damage cancels the attempt.
 function startCharge() {
   if (powerupTimer > 0 || charging) return;   // not while already buffed / charging
   charging = true; chargeTimer = 0;
@@ -389,10 +389,10 @@ function resolve(it) {
     }
   } else if (it.type === 'banana') {
     if (swatting) {
-      // Swatting a banana costs POINTS (and the power-up charge) only — it no
-      // longer drains a life, so it can never end the game on its own.
+      // Swatting a banana costs POINTS only — it no longer drains a life, so it
+      // can never end the game on its own, and it does NOT cancel the disco-ball
+      // charge (only taking broccoli damage does that).
       score -= CONFIG.bananaSwatPenalty;
-      loseCharge();
       it.flying = true;
       it.peeled = true;
       ricochet(it);
@@ -416,7 +416,7 @@ function resolve(it) {
       } else {
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
-        loseCharge();                   // losing energy cancels the charge
+        loseCharge();                   // taking broccoli damage cancels the charge
         yuckTimer = CONFIG.yuckFaceTime;
         updateBroccoliHud();
         if (broccoliEaten >= CONFIG.broccoliEatenLimit) {
@@ -600,8 +600,8 @@ function update(dt) {
     !it.resolved &&
     it.x > -120 && it.x < VW + 120 && it.y > -120 && it.y < VH + 120
   );
-  // charge the buff: each clean second adds a meter segment; any loss of
-  // energy/points elsewhere calls loseCharge() and cancels the attempt.
+  // charge the buff: each clean second adds a meter segment; taking broccoli
+  // damage calls loseCharge() and cancels the attempt.
   if (charging) {
     chargeTimer += dt;
     if (chargeTimer >= CONFIG.powerupChargeTime) activatePowerup();
