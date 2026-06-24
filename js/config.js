@@ -81,7 +81,7 @@ const CONFIG = {
   // rests on the floor (babyMoveMax) and bonks the ceiling (babyMoveMin). Motion
   // is velocity-based (smooth arcs) — it moves like a bird, not like a stone.
   babyMoveMin: 160,    // px: ceiling — highest the baby's head center reaches
-  babyMoveMax: 540,    // px: floor — the baby rests here under gravity
+  babyMoveMax: 430,    // px: floor — the baby rests here under gravity
   gravity: 1100,   // px/sec^2 downward pull (y grows downward)
   flapImpulse: 560,    // px/sec of upward speed added per tap (a small hop);
   // a single hop from the floor rises ~100px

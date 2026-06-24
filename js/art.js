@@ -95,16 +95,6 @@ const ART = {
     ctx.drawImage(img, x - w/2, y - h/2, w, h);
   },
 
-  wobble(ctx, fn){
-    ctx.save();
-    ctx.lineWidth = ART.stroke;
-    ctx.strokeStyle = '#000';
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    fn(ctx);
-    ctx.restore();
-  },
-
   banana(ctx, x, y, r){
     ART.sprite(ctx, IMG.banana, x, y, r * CONFIG.foodSpriteScale);
   },
@@ -391,13 +381,5 @@ const ART = {
     ctx.fillStyle = '#ffd23f';
     ctx.fillText('LEVEL ' + level, 0, 0);
     ctx.restore();
-  },
-
-  catchZone(ctx, x, y, r){
-    ART.wobble(ctx, c=>{
-      c.setLineDash([10,12]);
-      c.lineWidth = 2;
-      c.beginPath(); c.arc(x, y, r, 0, Math.PI*2); c.stroke();
-    });
   }
 };
