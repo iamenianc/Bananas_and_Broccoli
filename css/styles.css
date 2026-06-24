@@ -152,3 +152,20 @@ html, body {
   background:#5fae46;                        /* green, matching the lives bar */
   transition:height .15s ease-out;
 }
+/* evenly-spaced tick notches so the bar reads as a scale */
+#progress::after {
+  content:""; position:absolute; left:3px; right:3px; top:3px; bottom:3px;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    to top,
+    transparent 0, transparent calc(25% - 1px),
+    rgba(0,0,0,.30) calc(25% - 1px), rgba(0,0,0,.30) 25%);
+}
+/* current level (bottom) and next level (top) labels beside the bar */
+.progress-label {
+  position:absolute; right:100%; margin-right:6px;
+  font-size:12px; font-weight:bold; letter-spacing:.5px; line-height:1;
+  opacity:.7; white-space:nowrap;
+}
+#progressTop { top:-1px; }
+#progressBot { bottom:-1px; }

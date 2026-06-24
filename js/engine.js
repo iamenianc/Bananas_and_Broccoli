@@ -8,6 +8,8 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const hudProgress = document.getElementById('progressFill');
+const hudProgTop = document.getElementById('progressTop');
+const hudProgBot = document.getElementById('progressBot');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
 const hudPower = document.getElementById('power');
@@ -77,9 +79,12 @@ function reset(){
   updateLevelHud();
 }
 
-// Show which difficulty level we're on in the corner.
+// Show which difficulty level we're on in the corner, and label the progress
+// bar's scale: the bar fills from the current level (bottom) to the next (top).
 function updateLevelHud(){
   if (hudLevel) hudLevel.textContent = 'LEVEL ' + level;
+  if (hudProgBot) hudProgBot.textContent = 'L' + level;
+  if (hudProgTop) hudProgTop.textContent = 'L' + (level + 1);
 }
 
 // Points needed to complete the CURRENT level. The target grows 5% per level:
