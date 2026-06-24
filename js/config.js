@@ -35,8 +35,8 @@ const CONFIG = {
   spawnEveryStart:  0.70,   // seconds between spawn BURSTS during level 1
   spawnEveryMin:    0.28,   // fastest spawn interval (reached at high levels)
   spawnRampPerLevel: 0.04,  // how much the spawn interval tightens each level
-  broccoliChance:   0.333,  // fraction of spawns that are broccoli
-                            // (the rest are bananas, so ≈ 2× as many bananas)
+  broccoliChance:   0.25,   // fraction of spawns that are broccoli
+                            // (the rest are bananas, so ≈ 3× as many bananas)
 
   // each spawn is a BURST of burstMin–burstMax items thrown together. Some are
   // decoys aimed to MISS the baby (fly past above/below) — visual noise the
@@ -91,10 +91,17 @@ const CONFIG = {
   moveZoneFrac:     0.4,    // left fraction of the screen used as the touch
                             // flap pad; the right 60% stays the swat/catch area so
                             // two thumbs can flap and swat at once
-  // FOUR fixed launch points on the right edge. Each point is DEDICATED to a
-  // single food type, so a given launch height always throws the same food.
-  // yFrac is the spawn height as a fraction of world height. Two banana and
-  // two broccoli points, interleaved top-to-bottom.
+  // BANANAS no longer home in on the baby. Each banana launches from a RANDOM
+  // height (anywhere along the vertical axis, a little beyond the baby's
+  // reachable band) and flies almost — but not perfectly — parallel to the
+  // x-axis: a small random up/down tilt. The player must flap to intercept.
+  bananaSpawnMargin: 40,    // px beyond the reachable band (babyMoveMin..Max) on
+                            // each side that a banana may launch from
+  bananaDriftMaxDeg: 3,     // max tilt (deg) off horizontal; each banana picks a
+                            // random angle in ±this (≈65px drift across the field)
+  // FOUR fixed launch points on the right edge — used by BROCCOLI (and the
+  // power-up, which rides the banana points). Each point is DEDICATED to a
+  // single food type. yFrac is the spawn height as a fraction of world height.
   spawnPoints: [
     { yFrac: 0.18, type: 'banana'   },
     { yFrac: 0.40, type: 'broccoli' },
@@ -115,10 +122,11 @@ const CONFIG = {
   bananaLifeRestorePct: 0.01, // each banana eaten restores this fraction of the
                             // full life bar (1% of broccoliEatenLimit)
 
-  // staggering — try to avoid two real items reaching the baby at the
-  // same instant, which is unfair/unreadable. New incoming items get a
-  // small launch delay nudged until their predicted arrival is at least
-  // minArrivalGap away from every other incoming item's arrival.
+  // staggering — try to avoid two HOMING items (broccoli / power-up) reaching
+  // the baby at the same instant, which is unfair/unreadable. New incoming
+  // homing items get a small launch delay nudged until their predicted arrival
+  // is at least minArrivalGap away from every other incoming item's arrival.
+  // (Bananas don't home in on the baby, so they're exempt from staggering.)
   minArrivalGap:    0.22,   // seconds of clearance we aim for between hits
   arrivalDelayStep: 0.10,   // how much delay we add per nudge
   maxArrivalDelay:  0.9,    // never hold an item back longer than this

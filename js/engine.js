@@ -247,8 +247,25 @@ function spawnOne(sy, type, isDecoy, opts){
   opts = opts || {};
   const speedMult = opts.speedMult || 1;
   const r = CONFIG.itemRadius;
-  const target = babyHitbox();
   const sx = VW + r;
+  const sp = currentSpeed() * speedMult;
+
+  // BANANAS don't home in on the baby: they launch from the given (random)
+  // height and fly almost — but not perfectly — parallel to the x-axis, with a
+  // small random up/down tilt. No aim, no decoy, no arrival-staggering — the
+  // player must flap to intercept them.
+  if (type === 'banana'){
+    const ang = (Math.random()*2 - 1) * CONFIG.bananaDriftMaxDeg * Math.PI/180;
+    const ux = -Math.cos(ang), uy = Math.sin(ang);
+    items.push({
+      x:sx, y:sy, r, type, resolved:false, decoy:false,
+      delay: opts.delay || 0, speedMult,
+      ux, uy, vx:ux*sp, vy:uy*sp
+    });
+    return;
+  }
+
+  const target = babyHitbox();
   // real items aim at the hitbox centre; decoys aim at a point well above/below
   // the band so they sail past and miss.
   const aimY = isDecoy
@@ -256,7 +273,6 @@ function spawnOne(sy, type, isDecoy, opts){
     : target.cy;
   const dx = target.x - sx, dy = aimY - sy;
   const len = Math.hypot(dx, dy) || 1;
-  const sp = currentSpeed() * speedMult;
   // Stagger arrivals: nudge this item's launch delay until its predicted
   // arrival time is clear of every other incoming real item's arrival,
   // so two things rarely reach the baby at the exact same instant. A volley
@@ -283,17 +299,26 @@ function spawnOne(sy, type, isDecoy, opts){
   items.push(item);
 }
 
-// Predicted arrival times (seconds from now) of all incoming real items,
-// used to space out new spawns so hits don't land simultaneously.
+// Predicted arrival times (seconds from now) of all incoming HOMING items
+// (broccoli / power-up), used to space out new spawns so hits don't land
+// simultaneously. Bananas don't home at the baby, so they're excluded.
 function incomingArrivals(sp){
   const target = babyHitbox();
   const out = [];
   for (const it of items){
-    if (it.resolved || it.flying || it.decoy) continue;
+    if (it.resolved || it.flying || it.decoy || it.type === 'banana') continue;
     const d = Math.hypot(it.x - target.x, it.y - target.cy);
     out.push((it.delay > 0 ? it.delay : 0) + d/sp);
   }
   return out;
+}
+
+// A banana's random launch height: anywhere along the vertical axis, a little
+// beyond the baby's reachable band on each side (clamped on-screen).
+function randomBananaY(){
+  const lo = Math.max(CONFIG.itemRadius, CONFIG.babyMoveMin - CONFIG.bananaSpawnMargin);
+  const hi = Math.min(VH - CONFIG.itemRadius, CONFIG.babyMoveMax + CONFIG.bananaSpawnMargin);
+  return lo + Math.random() * (hi - lo);
 }
 
 // Pick one of the fixed launch points dedicated to `type`, preferring a
@@ -318,8 +343,7 @@ function spawn(){
   for (let i=0; i<n; i++){
     const isDecoy = Math.random() < CONFIG.decoyChance;
     // Decide the food type (preserving the banana/broccoli ratio; bananas
-    // occasionally upgrade to the rare power-up), then launch it from a point
-    // DEDICATED to that food. Power-ups ride the banana launchers.
+    // occasionally upgrade to the rare power-up).
     let type;
     if (barrageTimer > 0){
       type = 'broccoli';
@@ -330,9 +354,17 @@ function spawn(){
     } else {
       type = 'banana';
     }
-    const baseType = type === 'powerup' ? 'banana' : type;
-    const sy = pickSpawnPoint(baseType, used).yFrac * VH;
-    spawnOne(sy, type, isDecoy);
+    if (type === 'banana'){
+      // bananas launch from a random height and fly nearly-horizontal (never
+      // decoys — every banana is its own stray target to flap toward).
+      spawnOne(randomBananaY(), 'banana', false);
+    } else {
+      // broccoli / power-up launch from a DEDICATED fixed point and home at the
+      // baby (power-ups ride the banana launch heights).
+      const baseType = type === 'powerup' ? 'banana' : type;
+      const sy = pickSpawnPoint(baseType, used).yFrac * VH;
+      spawnOne(sy, type, isDecoy);
+    }
   }
 }
 
