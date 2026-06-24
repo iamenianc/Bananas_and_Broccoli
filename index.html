@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Bananas & Broccoli</title>
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -15,17 +18,24 @@
   <canvas id="game"></canvas>
 
   <div id="hud" class="playfield-overlay">
-    <div id="score">0</div>
-    <div id="broccoli" aria-label="lives remaining"></div>
+    <div class="hud-spacer"></div>
+    <div class="hud-bars">
+      <div id="broccoli" aria-label="lives remaining"></div>
+      <div id="progress" aria-label="level progress"><span id="progressFill"></span></div>
+    </div>
     <div id="mode">CATCHING</div>
   </div>
-  <div class="hint playfield-overlay">hold = swat &nbsp;·&nbsp; release = catch</div>
+  <div id="power" class="playfield-overlay" aria-label="power-up charge"></div>
+  <div id="level" class="playfield-overlay" aria-label="difficulty level">LEVEL 1</div>
 
   <!-- START -->
   <div id="start" class="overlay playfield-overlay">
     <h1>BANANAS &amp; BROCCOLI</h1>
     <p>You're a baby. Bananas and broccoli fly in from the right, straight at you.
-       Hold your finger down to <b>swat broccoli away</b>; let go to <b>catch a banana</b>.
+       Hold down to <b>swat broccoli away</b>; let go to <b>catch a banana</b>.
+       <b>Tap to flap</b> upward and chain taps to fly higher — gravity pulls you
+       back down — so you can dodge broccoli and grab stray bananas. Flap on the
+       <b>left side</b> of the screen, <b>click</b>, or tap <b>↑ / Space</b>.
        Swatting a banana costs 1 point. Eat 10 broccoli or deflect bananas at 0 points and it's over.</p>
     <button id="startBtn" class="btn">START</button>
   </div>
@@ -33,8 +43,8 @@
   <!-- GAME OVER -->
   <div id="gameover" class="overlay hidden playfield-overlay">
     <h1>OOPS</h1>
-    <div class="big" id="finalScore">Score: 0</div>
-    <p id="goReason">You swatted a banana.</p>
+    <p id="goReason">you ate too many broccolis :(</p>
+    <div class="big" id="finalStats">Level 1 reached · 0 bananas eaten</div>
     <button id="retryBtn" class="btn">AGAIN</button>
   </div>
 
