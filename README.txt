@@ -34,5 +34,8 @@ NOTES
   - Landscape only: in a portrait window it shows a "turn sideways" prompt.
     On desktop just make the browser window wider than it is tall.
   - Hold mouse/finger = SWAT, release = CATCH.
+  - Move the baby UP/DOWN to dodge broccoli and reach stray bananas:
+    drag the LEFT side of the screen (touch), move the mouse, or use the
+    Up/Down arrow keys (W/S). Space also swats.
   - To install as an app: in Chrome/Edge, open the localhost URL, then
     use the install icon in the address bar.

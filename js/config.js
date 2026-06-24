@@ -66,6 +66,18 @@ const CONFIG = {
   babyBobReseedMax: 1.6,    // s: max time before a new random target is picked
   catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
                             // within this many px of its head; else stands neutral
+  // PLAYER VERTICAL MOVEMENT — the baby can be steered up/down the screen to
+  // dodge broccoli and reach for stray bananas. The head-center y is clamped to
+  // [babyMoveMin, babyMoveMax]; the idle bob still plays on top of it. Steering
+  // sets a target y that the figure eases toward (smooth for mouse/touch);
+  // keyboard nudges that target at babyMoveSpeed px/sec. On touch, only the left
+  // moveZoneFrac of the screen steers — the rest stays the swat/catch area.
+  babyMoveMin:      160,    // px: highest the baby's head center may travel
+  babyMoveMax:      540,    // px: lowest the baby's head center may travel
+  babyMoveSpeed:    640,    // px/sec vertical speed under keyboard control
+  babyMoveEase:     16,     // per-second approach rate toward the steer target
+  moveZoneFrac:     0.5,    // left fraction of the screen used as the touch
+                            // move zone (the right part remains swat/catch)
   // FOUR fixed launch points on the right edge. Each point is DEDICATED to a
   // single food type, so a given launch height always throws the same food.
   // yFrac is the spawn height as a fraction of world height. Two banana and
