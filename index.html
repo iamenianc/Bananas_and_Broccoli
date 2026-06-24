@@ -19,16 +19,14 @@
 
   <div id="hud" class="playfield-overlay">
     <div class="hud-spacer"></div>
-    <div id="broccoli" aria-label="lives remaining"></div>
+    <div class="hud-bars">
+      <div id="broccoli" aria-label="lives remaining"></div>
+      <div id="progress" aria-label="level progress"><span id="progressFill"></span></div>
+    </div>
     <div id="mode">CATCHING</div>
   </div>
   <div id="power" class="playfield-overlay" aria-label="power-up charge"></div>
   <div id="level" class="playfield-overlay" aria-label="difficulty level">LEVEL 1</div>
-  <div id="progress" class="playfield-overlay" aria-label="level progress">
-    <span id="progressTop" class="progress-label">L2</span>
-    <span id="progressFill"></span>
-    <span id="progressBot" class="progress-label">L1</span>
-  </div>
 
   <!-- START -->
   <div id="start" class="overlay playfield-overlay">

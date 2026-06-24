@@ -107,6 +107,9 @@ const CONFIG = {
   // scoring
   pointsPerBanana:    2,    // points for catching a banana (×2 again while powered up)
   penaltyPoints:      0,    // points lost for eating a broccoli
+  broccoliTapPoints:  2,    // points for swatting a broccoli away with a precise
+                            // TAP (released, riding the swat-tolerance window) —
+                            // a press-and-hold swat is safe but scores nothing
   bananaSwatPenalty:  1,    // points lost for swatting a banana away (NOT a loss)
   broccoliEatenLimit: 10,   // total life points; losing this many = game over
   bananaLifeRestorePct: 0.01, // each banana eaten restores this fraction of the
@@ -125,7 +128,8 @@ const CONFIG = {
   //                                        also restores bananaLifeRestorePct of life
   //  - Banana    + holding  (rejecting) => -bananaSwatPenalty AND always costs a
   //                                        life point; banana flies off half-peeled
-  //  - Broccoli  + holding  (swatting)  => safe, swatted away (good)
+  //  - Broccoli  + swatting (tap)       => +broccoliTapPoints (a precise tap);
+  //                                        a press-and-hold swat is safe but +0
   //  - Broccoli  + released (eaten)     => costs a life toward broccoliEatenLimit
   //                                        (harmless and worth nothing while powered up)
   //  - Disco ball+ released (caught)    => refunds a life and begins the power-up

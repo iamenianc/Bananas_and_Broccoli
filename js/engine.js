@@ -8,8 +8,6 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const hudProgress = document.getElementById('progressFill');
-const hudProgTop = document.getElementById('progressTop');
-const hudProgBot = document.getElementById('progressBot');
 const hudMode  = document.getElementById('mode');
 const hudBroccoli = document.getElementById('broccoli');
 const hudPower = document.getElementById('power');
@@ -86,12 +84,9 @@ function reset(){
   updateLevelHud();
 }
 
-// Show which difficulty level we're on in the corner, and label the progress
-// bar's scale: the bar fills from the current level (bottom) to the next (top).
+// Show which difficulty level we're on in the corner.
 function updateLevelHud(){
   if (hudLevel) hudLevel.textContent = 'LEVEL ' + level;
-  if (hudProgBot) hudProgBot.textContent = 'L' + level;
-  if (hudProgTop) hudProgTop.textContent = 'L' + (level + 1);
 }
 
 // Points needed to complete the CURRENT level. The target grows 5% per level:
@@ -101,12 +96,12 @@ function pointsToAdvance(){
     Math.pow(CONFIG.levelPointsGrowth, level - 1));
 }
 
-// Fill the corner progress bar to reflect how far the score has climbed toward
-// the current level's points target (0..100%).
+// Fill the progress bar (horizontal, under the health bar) to reflect how far
+// the score has climbed toward the current level's points target (0..100%).
 function updateProgressHud(){
   if (!hudProgress) return;
   const pct = Math.max(0, Math.min(100, (score / pointsToAdvance()) * 100));
-  hudProgress.style.height = pct + '%';
+  hudProgress.style.width = pct + '%';
 }
 
 // Knock every banana/broccoli currently on the field tumbling off the bottom
@@ -426,6 +421,10 @@ function resolve(it){
         }
       }
     } else {
+      // swatted away (good). A precise TAP — finger already released, the swat
+      // still active only via the tolerance window — is rewarded with points; a
+      // press-and-hold swat (finger still down) is safe but scores nothing.
+      if (!holding && swatHoldTimer > 0) score += CONFIG.broccoliTapPoints;
       it.flying = true;
       it.touchedBaby = true;
       ricochet(it);

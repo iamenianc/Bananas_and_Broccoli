@@ -136,39 +136,19 @@ html, body {
   opacity:.7; z-index:5; pointer-events:none;
 }
 
-/* Level-progress bar — a vertical gauge in the bottom-right corner that fills
-   from the bottom up as the score climbs toward the next level's target. */
+/* Level-progress bar — a horizontal YELLOW gauge directly beneath the health
+   bar (shares its bottom border, no gap), filling left→right toward the next
+   level's points target. */
+.hud-bars { display:flex; flex-direction:column; align-items:center; }
 #progress {
-  position:fixed;
-  bottom:calc(12px + env(safe-area-inset-bottom));
-  /* Inset from the right edge to mirror the baby's gap on the left: the baby's
-     head sits at babyHeadX/worldW = 360/1560 ≈ 23% in from the left, so the bar
-     sits ~23% in from the right (matches when the world fills the viewport). */
-  right:calc(23vw + env(safe-area-inset-right));
-  width:18px; height:160px;
-  border:3px solid #000; background:#fff; padding:3px;
-  display:flex; align-items:flex-end;       /* fill grows upward from the base */
-  z-index:5; pointer-events:none;
+  width:180px; height:16px;
+  border:3px solid #000; border-top:0;        /* butts flush under the health bar */
+  background:#fff; padding:3px;
+  display:flex; align-items:stretch;
+  pointer-events:none;
 }
 #progressFill {
-  display:block; width:100%; height:0%;
-  background:#5fae46;                        /* green, matching the lives bar */
-  transition:height .15s ease-out;
+  display:block; width:0%; height:100%;
+  background:#ffd23f;                          /* yellow */
+  transition:width .15s ease-out;
 }
-/* evenly-spaced tick notches so the bar reads as a scale */
-#progress::after {
-  content:""; position:absolute; left:3px; right:3px; top:3px; bottom:3px;
-  pointer-events:none;
-  background:repeating-linear-gradient(
-    to top,
-    transparent 0, transparent calc(25% - 1px),
-    rgba(0,0,0,.30) calc(25% - 1px), rgba(0,0,0,.30) 25%);
-}
-/* current level (bottom) and next level (top) labels beside the bar */
-.progress-label {
-  position:absolute; right:100%; margin-right:6px;
-  font-size:12px; font-weight:bold; letter-spacing:.5px; line-height:1;
-  opacity:.7; white-space:nowrap;
-}
-#progressTop { top:-1px; }
-#progressBot { bottom:-1px; }
