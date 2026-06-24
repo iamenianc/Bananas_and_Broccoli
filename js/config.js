@@ -162,7 +162,7 @@ const CONFIG = {
   eatFrameTime: 0.30,   // seconds each laughing frame holds while the two
   // baby-eat poses alternate during the buff
   powerupSpinRate: 3,      // rad/sec the disco ball spins while incoming
-  powerupSpeedMult: 2,      // item speed multiplier while the buff is active
+  powerupSpeedMult: 1.3,      // item speed multiplier while the buff is active
   powerupBabyScale: 2,      // baby size multiplier while the buff is active
   // The disco ball is the ONLY trigger: catch it, then survive this many
   // seconds with NO loss of energy (no broccoli eaten) and NO loss of points.
@@ -178,7 +178,7 @@ const CONFIG = {
 
   // broccoli volley: a rare triple-shot of broccoli fired in quick succession
   // at double speed (replaces a normal spawn tick when it triggers).
-  volleyChance: 0.02,   // chance per spawn tick of a broccoli volley (2%)
+  volleyChance: 0.2,   // chance per spawn tick of a broccoli volley (2%)
   volleyCount: 3,      // broccoli launched in the volley
   volleySpeedMult: 2,      // speed multiplier for volley broccoli
   volleyGap: 0.25,   // seconds between successive shots in the volley

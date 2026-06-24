@@ -70,7 +70,7 @@ let swatPointerId = null;            // pointerId currently held in the swat zon
 let bananaSwatCooldownTimer = 0;     // cooldown timer for banana swat penalties
 
 function reset(){
-  items = []; score = 0; level = 1; bananasEaten = 0; levelFlashTimer = 0;
+  items = []; score = 0; level = 1; bananasEaten = 0; levelFlashTimer = CONFIG.levelFlashTime;
   elapsed = 0; spawnTimer = 0;
   holding = false; swatHoldTimer = 0; broccoliEaten = 0; yuckTimer = 0; powerupTimer = 0;
   charging = false; chargeTimer = 0;
@@ -231,6 +231,9 @@ function currentSpeed(){
   if (barrageTimer > 0) {
     base *= CONFIG.barrageSpeedMult;
   }
+  if (powerupTimer > 0) {
+    base *= CONFIG.powerupSpeedMult;
+  }
   return base;
 }
 function currentSpawnInterval(){
@@ -239,6 +242,9 @@ function currentSpawnInterval(){
   }
   let interval = Math.max(CONFIG.spawnEveryMin,
     CONFIG.spawnEveryStart - CONFIG.spawnRampPerLevel*(level - 1));
+  if (powerupTimer > 0) {
+    interval /= CONFIG.powerupSpeedMult;
+  }
   return interval;
 }
 
@@ -508,7 +514,7 @@ function update(dt){
     }
   } else {
     timeSinceLastBarrage += dt;
-    if (timeSinceLastBarrage >= CONFIG.barrageMinCooldown) {
+    if (timeSinceLastBarrage >= CONFIG.barrageMinCooldown && powerupTimer <= 0) {
       if (Math.random() < CONFIG.barrageChancePerSec * dt) {
         barrageTimer = CONFIG.barrageDuration;
         spawnTimer = 0; // Trigger an immediate burst
@@ -710,9 +716,9 @@ function render(){
   else {
     // The calm 'neutral' pose appears ONLY when the board is empty — i.e. the
     // screen has just been cleared (power-up ended, or a level-up knocked the
-    // field down and the pieces have tumbled off). Whenever any food is on
-    // screen the baby stays in the engaged 'catch' pose, ready to reach.
-    face = items.length === 0 ? 'neutral' : 'catch';
+    // field down and the pieces have tumbled off), or when the level name is flashing.
+    // Whenever any food is on screen the baby stays in the engaged 'catch' pose, ready to reach.
+    face = (items.length === 0 || levelFlashTimer > 0) ? 'neutral' : 'catch';
   }
   const babyScale = powerupTimer > 0 ? CONFIG.powerupBabyScale : 1;
   ART.baby(ctx, baby.x, baby.y, swatting, face, babyScale);
