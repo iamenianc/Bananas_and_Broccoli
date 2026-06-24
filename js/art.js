@@ -67,6 +67,95 @@ function _cloud(ctx, cx, cy, size, color){
   ctx.restore();
 }
 
+/* ---- Procedural day / night cycle ------------------------------------- */
+function _lerp(a, b, t){ return a + (b - a) * t; }
+function _lerpRGB(c1, c2, t){
+  return [Math.round(_lerp(c1[0], c2[0], t)),
+          Math.round(_lerp(c1[1], c2[1], t)),
+          Math.round(_lerp(c1[2], c2[2], t))];
+}
+function _rgb(c, a){
+  return a == null ? 'rgb('  + c[0] + ',' + c[1] + ',' + c[2] + ')'
+                   : 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
+}
+
+// Sky gradient keyframes around the clock — phase 0 dawn, .25 noon, .5 dusk,
+// .75 midnight, then wrapping back to dawn. Each stop holds [top, mid, bottom]
+// RGB bands, interpolated continuously so the sky never snaps between states.
+const _SKY_KEYS = [
+  { p:0.00, top:[120,138,186], mid:[236,182,166], bot:[250,214,176] }, // dawn
+  { p:0.25, top:[207,232,245], mid:[227,242,251], bot:[238,247,240] }, // day
+  { p:0.50, top:[ 74, 72,120], mid:[226,123, 96], bot:[250,182,120] }, // dusk
+  { p:0.75, top:[ 14, 18, 44], mid:[ 24, 30, 62], bot:[ 38, 46, 82] }, // night
+];
+function _skyAt(phase){
+  const keys = _SKY_KEYS, n = keys.length;
+  for (let i = 0; i < n; i++){
+    const a = keys[i], b = keys[(i + 1) % n];
+    const bp = (i + 1 < n) ? b.p : b.p + 1.0;   // wrap night → dawn
+    if (phase >= a.p && phase < bp){
+      const t = (phase - a.p) / (bp - a.p);
+      return { top:_lerpRGB(a.top, b.top, t),
+               mid:_lerpRGB(a.mid, b.mid, t),
+               bot:_lerpRGB(a.bot, b.bot, t) };
+    }
+  }
+  return { top:keys[0].top, mid:keys[0].mid, bot:keys[0].bot };
+}
+
+// Darken/blue a scenery colour toward night so hills and clouds settle into
+// dusk alongside the sky. `night` is 0 (day) … 1 (deep night).
+const _NIGHT_TINT = [20, 26, 54];
+function _nightShade(c, night){ return _lerpRGB(c, _NIGHT_TINT, night * 0.72); }
+
+// Procedural star field, generated once from a fixed seed so the stars hold
+// still (only their twinkle animates) across the upper half of the sky.
+function _mkStars(seed, count){
+  let s = seed >>> 0;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  const out = [];
+  for (let i = 0; i < count; i++){
+    out.push({ x: rnd(), y: rnd() * 0.58, r: 0.6 + rnd() * 1.6,
+               ph: rnd() * Math.PI * 2, sp: 1.4 + rnd() * 2.6 });
+  }
+  return out;
+}
+const _STARS = _mkStars(0x9e3779b1, 70);
+
+// The sun: a warm core wrapped in a soft halo.
+function _sun(ctx, x, y, rad, core, glow, alpha){
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const halo = ctx.createRadialGradient(x, y, rad*0.4, x, y, rad*3.4);
+  halo.addColorStop(0, _rgb(glow, 0.55));
+  halo.addColorStop(1, _rgb(glow, 0));
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, y, rad*3.4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = _rgb(core);
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// The moon: pale disc, soft halo, a few faint craters.
+function _moon(ctx, x, y, rad, alpha){
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const halo = ctx.createRadialGradient(x, y, rad*0.5, x, y, rad*3.4);
+  halo.addColorStop(0, 'rgba(220,228,255,0.40)');
+  halo.addColorStop(1, 'rgba(220,228,255,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, y, rad*3.4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#eef2ff';
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(196,205,235,0.55)';
+  ctx.beginPath(); ctx.arc(x - rad*0.30, y - rad*0.18, rad*0.22, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + rad*0.26, y + rad*0.10, rad*0.16, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + rad*0.05, y + rad*0.34, rad*0.12, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
 // Per-pose anchor metrics in each sprite's own natural-pixel coordinates:
 // the head bounding-box center (hcx,hcy), head height (headH), and figure
 // vertical center (fcy). Every pose is drawn at a uniform on-screen head
@@ -147,44 +236,85 @@ const ART = {
   // before any sprites are drawn, so only the background recolours — the baby
   // and food keep their true colours.
   background(ctx, w, h, t, party){
+    // Procedural day/night cycle. `phase` runs 0→1 once per cycle: 0 dawn,
+    // .25 noon, .5 dusk, .75 midnight. `elev` is the sun's elevation (sine of
+    // the phase), split into a daylight strength and a night strength that
+    // drive the sky, the celestial body, the stars and the scenery shading.
+    const cycle = CONFIG.dayNightCycleSec || 120;
+    const phase = ((t / cycle) % 1 + 1) % 1;
+    const elev  = Math.sin(phase * Math.PI * 2);
+    const daylight = Math.max(0, elev);
+    const night    = Math.max(0, -elev);
+
+    // sky gradient, continuously interpolated between the cycle keyframes
+    const skyC = _skyAt(phase);
     const sky = ctx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0,    '#cfe8f5');
-    sky.addColorStop(0.55, '#e3f2fb');
-    sky.addColorStop(1,    '#eef7f0');
+    sky.addColorStop(0,    _rgb(skyC.top));
+    sky.addColorStop(0.55, _rgb(skyC.mid));
+    sky.addColorStop(1,    _rgb(skyC.bot));
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, w, h);
-    ctx.save();
-    ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 52, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,252,225,0.30)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(w*0.78, h*0.13, 36, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,250,210,0.70)'; ctx.fill();
-    ctx.restore();
-    // drifting clouds (drawn behind the hills so peaks overlap them):
-    // [xfrac, yfrac, sizefrac, speed, color]
+
+    // stars fade in with the night and twinkle gently
+    if (night > 0.01){
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      for (const st of _STARS){
+        const tw = 0.55 + 0.45 * Math.sin(t * st.sp + st.ph);
+        ctx.globalAlpha = night * tw;
+        ctx.beginPath(); ctx.arc(st.x * w, st.y * h, st.r, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // sun (first half of the cycle) or moon (second half), arcing horizon to
+    // horizon and fading out as it dips toward the skyline.
+    const horizon = h * 0.66, arc = h * 0.54;
+    if (phase < 0.5){
+      const ps = phase / 0.5;                         // 0 sunrise … 1 sunset
+      const sx = w * (0.06 + 0.88 * ps);
+      const sy = horizon - Math.sin(ps * Math.PI) * arc;
+      const a  = Math.max(0, Math.min(1, Math.sin(ps * Math.PI) * 1.6));
+      const core = _lerpRGB([255,176,116], [255,250,214], Math.min(1, daylight * 1.4));
+      _sun(ctx, sx, sy, 46, core, [255,214,150], a);
+    } else {
+      const pm = (phase - 0.5) / 0.5;                 // 0 moonrise … 1 moonset
+      const mx = w * (0.06 + 0.88 * pm);
+      const my = horizon - Math.sin(pm * Math.PI) * arc;
+      const a  = Math.max(0, Math.min(1, Math.sin(pm * Math.PI) * 1.6));
+      _moon(ctx, mx, my, 38, a);
+    }
+
+    // drifting clouds (drawn behind the hills so peaks overlap them), tinted
+    // toward night: [xfrac, yfrac, sizefrac, speed, alpha]
+    const cloudC = _lerpRGB([255,255,255], [70,78,110], night * 0.72);
     const clouds = [
-      [0.10, 0.16, 0.060, 12, 'rgba(255,255,255,0.85)'],
-      [0.42, 0.10, 0.085, 20, 'rgba(255,255,255,0.92)'],
-      [0.72, 0.20, 0.052, 16, 'rgba(255,255,255,0.80)'],
-      [0.90, 0.30, 0.070, 26, 'rgba(255,255,255,0.88)'],
-      [0.25, 0.32, 0.045, 30, 'rgba(255,255,255,0.75)'],
+      [0.10, 0.16, 0.060, 12, 0.85],
+      [0.42, 0.10, 0.085, 20, 0.92],
+      [0.72, 0.20, 0.052, 16, 0.80],
+      [0.90, 0.30, 0.070, 26, 0.88],
+      [0.25, 0.32, 0.045, 30, 0.75],
     ];
     const span = w * 1.4;                       // wrap width (off-screen margin)
-    for (const [xf, yf, sf, spd, col] of clouds){
+    for (const [xf, yf, sf, spd, al] of clouds){
       let cx = (xf*w - t*spd) % span;
       if (cx < -0.3*w) cx += span;
-      _cloud(ctx, cx, yf*h, sf*Math.min(w,h*1.4)*2.2, col);
+      _cloud(ctx, cx, yf*h, sf*Math.min(w,h*1.4)*2.2, _rgb(cloudC, al));
     }
-    // layers: far misty → mid forest → near hills (washed-out pastels)
-    _bgLayer(ctx, w, h, t *  18, h*0.52, 155, '#cdddea', 0.50);
-    _bgLayer(ctx, w, h, t *  46, h*0.60, 135, '#bcd9c4', 1.73);
-    
-    // Draw scrolling palm trees sitting on the distant hill
+    // layers: far misty → mid forest → near hills (washed-out pastels),
+    // each shaded toward night so the scenery dims with the sky.
+    _bgLayer(ctx, w, h, t *  18, h*0.52, 155, _rgb(_nightShade([205,221,234], night)), 0.50);
+    _bgLayer(ctx, w, h, t *  46, h*0.60, 135, _rgb(_nightShade([188,217,196], night)), 1.73);
+
+    // Draw scrolling palm trees sitting on the distant hill. They can't be
+    // recoloured, so fade them into the darkened hill at night instead.
     if (IMG.palmTrees && IMG.palmTrees.complete && IMG.palmTrees.naturalWidth) {
       const pw = IMG.palmTrees.naturalWidth * 0.15; // smaller scale for distance
       const ph = IMG.palmTrees.naturalHeight * 0.15;
       const pSpacing = w * 0.35; // closer spacing for distant objects
       const pScroll = (t * 46) % pSpacing; // sync speed exactly with the t*46 hill layer
       ctx.save();
+      ctx.globalAlpha = 1 - night * 0.6;
       for (let px = -pScroll; px < w; px += pSpacing) {
         // Find exact height of the terrain at this x-coordinate so the tree sits firmly on the hill
         const hillY = _mtY(px + t * 46 + pw / 2, h*0.60, 135, 1.73);
@@ -193,9 +323,9 @@ const ART = {
       ctx.restore();
     }
 
-    _bgLayer(ctx, w, h, t *  90, h*0.70, 100, '#aed4b4', 3.21);
+    _bgLayer(ctx, w, h, t *  90, h*0.70, 100, _rgb(_nightShade([174,212,180], night)), 3.21);
     // foreground hills
-    _bgLayer(ctx, w, h, t * 140, h*0.79, 55, '#9ccba6', 6.10);
+    _bgLayer(ctx, w, h, t * 140, h*0.79, 55, _rgb(_nightShade([156,203,166], night)), 6.10);
 
     // power-up: recolour the whole background with a shifting disco wash. Drawn
     // here (before sprites) so the scenery changes colour but sprites do not.

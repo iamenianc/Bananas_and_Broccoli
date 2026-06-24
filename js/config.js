@@ -12,6 +12,7 @@ const CONFIG = {
   worldW: 1560,             // Fixed virtual world width (landscape aspect ratio)
   worldH: 720,              // Fixed virtual world height
   moveZoneFrac: 0.4,        // Left fraction of screen used as touch flap pad (right 60% is swat/catch)
+  dayNightCycleSec: 120,    // Seconds for one full procedural day→night→day cycle
 
   // ==========================================
   // 2. BABY CHARACTER (PLAYER) MOVEMENT & STATS
