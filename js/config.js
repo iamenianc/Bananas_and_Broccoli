@@ -119,13 +119,13 @@ const CONFIG = {
 
   // Broccoli Barrage
   barrageMinCooldown: 50,   // Min delay (sec) between random barrages
-  barrageDuration: 6,       // Active duration (sec) of a barrage
+  barrageDuration: 3,       // Active duration (sec) of a barrage
   barrageSpawnEvery: 0.12,  // Rapid spawn rate (sec) of broccoli during barrage
   barrageSpeedMult: 1.7,    // Speed multiplier of items during barrage
   barrageChancePerSec: 0.08,// Probability per second of triggering a barrage after cooldown
 
   // Broccoli Volley
-  volleyChance: 0.12,       // Probability of triggering a volley on any spawn tick
+  volleyChance: 0.09,       // Probability of triggering a volley on any spawn tick
   volleyCount: 3,           // Number of broccoli items launched in the volley
   volleySpeedMult: 2,       // Speed multiplier of volley items
   volleyGap: 0.17,          // Launch gap (sec) between successive volley items
@@ -133,7 +133,7 @@ const CONFIG = {
   // ==========================================
   // 8. VISUAL ASSETS STYLING
   // ==========================================
-  foodSpriteScale: 2.5,     // Scaling multiplier for drawn item sprites
+  foodSpriteScale: 2.2,     // Scaling multiplier for drawn item sprites
   bananaFill: '#ffd23f',     // Fallback color for banana vector fills
   broccoliFill: '#5fae46',  // Fallback color for broccoli vector fills
 };
