@@ -32,17 +32,17 @@ const CONFIG = {
                             // target(level) = pointsPerLevel * growth^(level-1)
   levelFlashTime:   1.4,    // seconds the new level's name flashes then fades at
                             // the centre of the play area (gameplay keeps running)
-  spawnEveryStart:  0.70,   // seconds between spawn BURSTS during level 1
+  spawnEveryStart:  0.60,   // seconds between spawn BURSTS during level 1
   spawnEveryMin:    0.28,   // fastest spawn interval (reached at high levels)
   spawnRampPerLevel: 0.04,  // how much the spawn interval tightens each level
-  broccoliChance:   0.25,   // fraction of spawns that are broccoli
+  broccoliChance:   0.20,   // fraction of spawns that are broccoli
                             // (the rest are bananas, so ≈ 3× as many bananas)
 
   // each spawn is a BURST of burstMin–burstMax items thrown together. Some are
   // decoys aimed to MISS the baby (fly past above/below) — visual noise the
   // player must read past.
-  burstMin:         2,      // min items per burst
-  burstMax:         3,      // max items per burst
+  burstMin:         3,      // min items per burst
+  burstMax:         5,      // max items per burst
   decoyChance:      0.45,   // chance any given item in a burst is a decoy
   decoyMissOffset:  140,    // px above/below the hitbox centre a decoy is aimed
                             // (exceeds the band half-height so it cleanly misses)
@@ -119,7 +119,7 @@ const CONFIG = {
                             // a press-and-hold swat is safe but scores nothing
   bananaSwatPenalty:  1,    // points lost for swatting a banana away (NOT a loss)
   broccoliEatenLimit: 10,   // total life points; losing this many = game over
-  bananaLifeRestorePct: 0.01, // each banana eaten restores this fraction of the
+  bananaLifeRestorePct: 0.02, // each banana eaten restores this fraction of the
                             // full life bar (1% of broccoliEatenLimit)
 
   // staggering — try to avoid two HOMING items (broccoli / power-up) reaching
