@@ -271,7 +271,9 @@ function spawnOne(sy, type, isDecoy, opts) {
   const item = {
     x: sx, y: sy, r, type, resolved: false, decoy: isDecoy, delay, speedMult,
     ux: dx / len, uy: dy / len,
-    vx: dx / len * sp, vy: dy / len * sp
+    vx: dx / len * sp, vy: dy / len * sp,
+    isVolley: opts.isVolley || false,
+    startX: sx
   };
   if (type === 'powerup') { item.rot = 0; item.spin = CONFIG.powerupSpinRate; }
   items.push(item);
@@ -355,7 +357,8 @@ function spawnBroccoliVolley() {
     const sy = pickSpawnPoint('broccoli', used).yFrac * VH;
     spawnOne(sy, 'broccoli', false, {
       speedMult: CONFIG.volleySpeedMult,
-      delay: i * CONFIG.volleyGap
+      delay: i * CONFIG.volleyGap,
+      isVolley: true
     });
   }
 }
@@ -381,7 +384,7 @@ function resolve(it) {
     } else {
       it.resolved = true;
       if (broccoliEaten > 0) {
-        broccoliEaten = Math.max(0, broccoliEaten - 1);  // refund a full life
+        broccoliEaten = Math.max(0, broccoliEaten - CONFIG.powerupLifeRestore);  // refund health
         updateBroccoliHud();
       }
       startCharge();                    // begin the clean-play charge attempt
@@ -532,8 +535,14 @@ function update(dt) {
         it.uy /= uLen;
       }
     }
-
-
+    // Volley homing: if it is a volley broccoli and not yet past halfway through its journey
+    if (it.isVolley && it.startX && it.x > hb.x + (it.startX - hb.x) * 0.45) {
+      const vdx = hb.x - it.x;
+      const vdy = hb.cy - it.y;
+      const vlen = Math.hypot(vdx, vdy) || 1;
+      it.ux = vdx / vlen;
+      it.uy = vdy / vlen;
+    }
 
     // incoming item: keep moving along the fixed aim direction. Per-item
     // speedMult keeps volley broccoli flying at their faster pace every frame

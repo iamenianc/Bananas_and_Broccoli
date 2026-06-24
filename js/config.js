@@ -1,197 +1,139 @@
 /* ============================================================
-   BANANAS & BROCCOLI — CONFIG
+   BANANAS & BROCCOLI — CONFIGURATION MENU
    ------------------------------------------------------------
-   Every tunable gameplay number lives here. To rebalance the
-   game, edit this file only. Exposed as a global `CONFIG` so
-   art.js and engine.js (loaded after this file) can read it.
+   Every tunable gameplay setting lives here, grouped by category.
+   Exposed as a global `CONFIG` object for art.js and engine.js.
    ============================================================ */
+
 const CONFIG = {
-  // FIXED VIRTUAL WORLD (design resolution). All gameplay positions are
-  // expressed in these coordinates and never change, so resizing the
-  // browser only uniformly scales the world to fit the screen
-  // (letterboxed) — relative positions of every object stay identical.
-  // 19.5:9 landscape (1560×720). Desktop renders this fixed world scaled to
-  // the window; phones scale it to fill the display.
-  worldW: 1560,
-  worldH: 720,
+  // ==========================================
+  // 1. SYSTEM & VIEWPORT RESOLUTION
+  // ==========================================
+  worldW: 1560,             // Fixed virtual world width (landscape aspect ratio)
+  worldH: 720,              // Fixed virtual world height
+  moveZoneFrac: 0.4,        // Left fraction of screen used as touch flap pad (right 60% is swat/catch)
 
-  // world — items TRAVEL horizontally from the right edge toward the baby
-  baseSpeed: 562.5,  // px/sec along the aim line; the speed during level 1
-  maxSpeed: 1200,   // hard ceiling the per-level speed curve eases toward
-  // Difficulty progresses by LEVEL, not by elapsed time: speed is CONSTANT
-  // within a level and only steps up when the player completes one (reaches
-  // pointsPerLevel). Each step eases toward maxSpeed on a curve, so the
-  // increments shrink as the speed climbs. Smaller tau = bigger early jumps.
-  // speed(level) = maxSpeed - (maxSpeed-baseSpeed)*e^(-(level-1)/tau).
-  levelSpeedTau: 5,      // levels: time-constant of the per-level speed curve
-  pointsPerLevel: 80,     // points that complete LEVEL 1; reaching the target
-  // resets the score to 1 and advances to the next
-  // (faster) level. Play is continuous — the field is
-  // knocked down, not frozen — when a level begins.
-  levelPointsGrowth: 1.05,  // the points target grows 5% each level:
-  // target(level) = pointsPerLevel * growth^(level-1)
-  levelFlashTime: 1.4,    // seconds the new level's name flashes then fades at
-  // the centre of the play area (gameplay keeps running)
-  spawnEveryStart: 0.60,   // seconds between spawn BURSTS during level 1
-  spawnEveryMin: 0.28,   // fastest spawn interval (reached at high levels)
-  spawnRampPerLevel: 0.04,  // how much the spawn interval tightens each level
-  broccoliChance: 0.20,   // fraction of spawns that are broccoli
-  // (the rest are bananas, so ≈ 3× as many bananas)
+  // ==========================================
+  // 2. BABY CHARACTER (PLAYER) MOVEMENT & STATS
+  // ==========================================
+  babyHeadX: 360,           // Head x anchor position (closer to screen center)
+  babyHeadY: 315,           // Vertical anchor; positions baby centered in the play area
+  babyFigCenter: 45,        // Pixels the baby figure center sits below anchor y
+  babyHeadPx: 108,          // Target on-screen head height (uniform across poses)
 
-  // each spawn is a BURST of burstMin–burstMax items thrown together. Some are
-  // decoys aimed to MISS the baby (fly past above/below) — visual noise the
-  // player must read past.
-  burstMin: 3,      // min items per burst
-  burstMax: 5,      // max items per burst
-  decoyChance: 0.45,   // chance any given item in a burst is a decoy
-  decoyMissOffset: 140,    // px above/below the hitbox centre a decoy is aimed
-  // (exceeds the band half-height so it cleanly misses)
+  // Hitbox offsets (world px from baby anchor y)
+  hitTopDY: -58,            // Top of the head boundary
+  hitBotDY: 70,             // Shoulders boundary (bottom of regular hitbox)
 
-  // baby (the player) sits LEFT of centre. The sprite is anchored by its HEAD
-  // center at (babyHeadX, babyHeadY); incoming food resolves against the baby's
-  // upper-body HITBOX — a vertical band from the shoulders to the top of the
-  // head at the head column (see hitTopDY/hitBotDY below).
-  babyHeadX: 360,    // px: on-screen x of the baby's head center (the gap
-  // to the left edge was doubled 180->360 so the baby
-  // sits a little closer to the centre of the field)
-  babyHeadY: 315,    // px: vertical anchor; each pose's figure center is
-  // placed babyFigCenter below this, so the figure
-  // sits centred on screen (315+45 = 360 = VH/2)
-  babyFigCenter: 45,     // px the figure center sits below the anchor y
-  babyHeadPx: 108,    // target on-screen head height (uniform across poses)
-  // HITBOX — food collides/resolves against the baby's upper body: a vertical
-  // band from the SHOULDERS up to the TOP OF THE HEAD, centred on the head
-  // column (babyHeadX). Offsets are world px from the baby anchor (babyPos) and
-  // scale with the baby during the power-up. Food resolves when it reaches the
-  // column (within resolveRadius horizontally) and its centre is inside the
-  // band; food passing above the head or below the shoulders sails past/misses.
-  hitTopDY: -58,     // px: top of the head, relative to the baby anchor y
-  hitBotDY: 70,     // px: the shoulders, relative to the baby anchor y
-  // gentle idle motion: the baby drifts up/down a few px at random about its
-  // centred origin (eases toward a fresh random target every reseed interval).
-  babyBobAmp: 16,     // px: max drift from the origin
-  babyBobEase: 2.2,    // per-second approach rate toward the current target
-  babyBobReseedMin: 0.7,    // s: min time before a new random target is picked
-  babyBobReseedMax: 1.6,    // s: max time before a new random target is picked
-  catchAnticipateDist: 520, // baby lunges (catch pose) when a real item is
-  // within this many px of its head; else stands neutral
-  // PLAYER VERTICAL MOVEMENT — FLAPPY style. The baby never steers freely:
-  // gravity constantly pulls it down and TAPPING flaps a small upward impulse.
-  // Chain taps to climb higher; there is NO active way to push down. The baby
-  // rests on the floor (babyMoveMax) and bonks the ceiling (babyMoveMin). Motion
-  // is velocity-based (smooth arcs) — it moves like a bird, not like a stone.
-  babyMoveMin: 160,    // px: ceiling — highest the baby's head center reaches
-  babyMoveMax: 430,    // px: floor — the baby rests here under gravity
-  gravity: 1100,   // px/sec^2 downward pull (y grows downward)
-  flapImpulse: 560,    // px/sec of upward speed added per tap (a small hop);
-  // a single hop from the floor rises ~100px
-  flapRiseMax: 1000,   // px/sec cap on upward speed when taps are chained
-  maxFallSpeed: 800,   // px/sec terminal downward speed
-  powerCentreEase: 12,     // per-second rate the 2x powered-up baby eases to centre
-  moveZoneFrac: 0.4,    // left fraction of the screen used as the touch
-  // flap pad; the right 60% stays the swat/catch area so
-  // two thumbs can flap and swat at once
-  // BANANAS no longer home in on the baby. Each banana launches from a RANDOM
-  // height (anywhere along the vertical axis, a little beyond the baby's
-  // reachable band) and flies almost — but not perfectly — parallel to the
-  // x-axis: a small random up/down tilt. The player must flap to intercept.
-  bananaSpawnMargin: 40,    // px beyond the reachable band (babyMoveMin..Max) on
-  // each side that a banana may launch from
-  bananaDriftMaxDeg: 3,     // max tilt (deg) off horizontal; each banana picks a
-  // random angle in ±this (≈65px drift across the field)
-  bananaMaxSpawnDelay: 0.40, // max seconds to delay a banana's launch in a burst to stagger spawns
-  // FOUR fixed launch points on the right edge — used by BROCCOLI (and the
-  // power-up, which rides the banana points). Each point is DEDICATED to a
-  // single food type. yFrac is the spawn height as a fraction of world height.
+  // Flappy physics & bounds
+  babyMoveMin: 160,         // Ceiling: highest the baby's head center can reach
+  babyMoveMax: 430,         // Floor baseline: where the baby rests under gravity
+  gravity: 1100,            // Downward gravitational acceleration (px/sec^2)
+  flapImpulse: 560,         // Upward speed impulse added per tap (px/sec)
+  flapRiseMax: 1000,        // Maximum cap on upward speed when taps are chained
+  maxFallSpeed: 800,        // Terminal fall velocity cap (px/sec)
+
+  // Anticipation & animations
+  catchAnticipateDist: 520, // Distance (px) at which baby lunges (catch pose) for incoming items
+  yuckFaceTime: 0.55,       // Duration (sec) baby looks disgusted after eating broccoli
+  swatHoldDuration: 0.18,   // Duration (sec) swat pose remains active for tapped timing tolerance
+  swatNudge: 0,             // Extra speed bonus when swatting (0 = off)
+
+  // Unused historical variables (bobbing logic removed from code)
+  babyBobAmp: 16,           // Max drift amplitude from origin
+  babyBobEase: 2.2,         // Easing approach rate to target drift
+  babyBobReseedMin: 0.7,    // Min duration before picking a new drift target
+  babyBobReseedMax: 1.6,    // Max duration before picking a new drift target
+
+  // ==========================================
+  // 3. ITEMS PHYSICS & COLLISION
+  // ==========================================
+  itemRadius: 34,           // Radius (px) for collision bounds and baseline drawing size
+  resolveRadius: 50,        // Distance from baby's column at which collision resolves
+  swatBackSpeed: 520,       // Ricochet launch speed (px/sec) when item is swatted/rejected
+  swatSpinMax: 12,          // Maximum spin rate (rad/sec) of a ricocheting item
+
+  // Staggering (spacing out incoming items to avoid overlapping hits)
+  minArrivalGap: 0.22,      // Minimum arrival separation (sec) between homing items
+  arrivalDelayStep: 0.10,   // Delay step (sec) added per nudge to resolve arrival conflicts
+  maxArrivalDelay: 0.9,     // Maximum total delay cap (sec) allowed for staggering
+
+  // ==========================================
+  // 4. GAMEPLAY PROGRESSION (LEVELS & DIFFICULTY)
+  // ==========================================
+  pointsPerLevel: 88,       // Score required to complete Level 1
+  levelPointsGrowth: 1.1,  // Exponential target score growth per level
+  levelFlashTime: 1.4,      // Duration (sec) the new level banner flashes at center
+  baseSpeed: 562.5,         // Initial item travel speed (px/sec) at Level 1
+  maxSpeed: 1200,           // Absolute ceiling speed that progression eases toward
+  levelSpeedTau: 5,         // Progression curvature rate (smaller = faster speed growth)
+  spawnEveryStart: 0.60,    // Initial spawn interval (sec) during Level 1
+  spawnEveryMin: 0.28,      // Fastest possible spawn interval at high levels
+  spawnRampPerLevel: 0.04,  // Decrement to spawn interval per level increase
+
+  // ==========================================
+  // 5. FOOD SPAWNS & LANES
+  // ==========================================
+  broccoliChance: 0.20,     // Fraction of spawns that are broccoli (rest are bananas)
+  burstMin: 3,              // Minimum items spawned per burst
+  burstMax: 5,              // Maximum items spawned per burst
+  decoyChance: 0.45,        // Chance any given item in a burst is a decoy (aims to miss)
+  decoyMissOffset: 140,     // Offset (px) above/below baby to guarantee a decoy miss
+  bananaSpawnMargin: 40,    // Height offset (px) beyond baby bounds bananas can spawn at
+  bananaDriftMaxDeg: 3,     // Max flight tilt angle (degrees) off horizontal for bananas
+  bananaMaxSpawnDelay: 0.40,// Max delay (sec) to stagger banana launches within a burst
+
+  // Fixed horizontal lanes on the right edge
   spawnPoints: [
     { yFrac: 0.18, type: 'banana' },
     { yFrac: 0.40, type: 'broccoli' },
     { yFrac: 0.60, type: 'banana' },
     { yFrac: 0.82, type: 'broccoli' },
   ],
-  itemRadius: 34,     // collision + draw size
-  resolveRadius: 50,     // distance from baby at which an item resolves
 
-  // scoring
-  pointsPerBanana: 2,    // points for catching a banana (×2 again while powered up)
-  penaltyPoints: 0,    // points lost for eating a broccoli
-  broccoliTapPoints: 2,    // points for swatting a broccoli away with a precise
-  // TAP (released, riding the swat-tolerance window) —
-  // a press-and-hold swat is safe but scores nothing
-  bananaSwatPenalty: 1,    // points lost for swatting a banana away (NOT a loss)
-  bananaSwatCooldown: 0.5, // seconds of cooldown before another banana swat penalty can be applied
-  broccoliEatenLimit: 10,   // total life points; losing this many = game over
-  bananaLifeRestorePct: 0.02, // each banana eaten restores this fraction of the
-  // full life bar (1% of broccoliEatenLimit)
+  // ==========================================
+  // 6. SCORING, LIVES & COOLDOWNS
+  // ==========================================
+  pointsPerBanana: 2,       // Points awarded for eating a banana
+  bananaSwatPenalty: 1,     // Score deducted when swatting a banana away
+  bananaSwatCooldown: 0.5,  // Cooldown (sec) before another banana swat penalty applies
+  penaltyPoints: 0,         // Score deducted when eating broccoli
+  broccoliTapPoints: 2,     // Points awarded for swatting broccoli away with a precise TAP
+  broccoliEatenLimit: 10,   // Total damage allowed before Game Over (life bar capacity)
+  bananaLifeRestorePct: 0.02,// Life restoration fraction (percentage of limit) per banana eaten
 
-  // staggering — try to avoid two HOMING items (broccoli / power-up) reaching
-  // the baby at the same instant, which is unfair/unreadable. New incoming
-  // homing items get a small launch delay nudged until their predicted arrival
-  // is at least minArrivalGap away from every other incoming item's arrival.
-  // (Bananas don't home in on the baby, so they're exempt from staggering.)
-  minArrivalGap: 0.22,   // seconds of clearance we aim for between hits
-  arrivalDelayStep: 0.10,   // how much delay we add per nudge
-  maxArrivalDelay: 0.9,    // never hold an item back longer than this
+  // ==========================================
+  // 7. SPECIAL GAME EVENTS
+  // ==========================================
 
-  // RULES (single source of truth, mirrored in resolve()):
-  //  - Banana    + released (catching)  => +pointsPerBanana (×2 while powered up);
-  //                                        also restores bananaLifeRestorePct of life
-  //  - Banana    + holding  (rejecting) => -bananaSwatPenalty AND always costs a
-  //                                        life point; banana flies off half-peeled
-  //  - Broccoli  + swatting (tap)       => +broccoliTapPoints (a precise tap);
-  //                                        a press-and-hold swat is safe but +0
-  //  - Broccoli  + released (eaten)     => costs a life toward broccoliEatenLimit
-  //                                        (harmless and worth nothing while powered up)
-  //  - Disco ball+ released (caught)    => refunds a life and begins the power-up
-  //                                        charge (survive powerupChargeTime clean)
+  // Power-Up Mode (Disco Ball)
+  powerupChance: 0.03,      // Fraction of item spawns that turn into disco balls
+  powerupDuration: 10,      // Active duration (sec) of the power-up buff
+  powerupChargeTime: 2,     // Clean play time (sec) required to charge the buff after catch
+  powerupLifeRestore: 3,    // Life points restored immediately on catch
+  powerupSpeedMult: 1.3,    // Item speed multiplier during active power-up
+  powerupBabyScale: 2,      // Baby scale multiplier during active power-up
+  powerupSpinRate: 3,       // Rotation speed (rad/sec) of the disco ball item
+  eatFrameTime: 0.30,       // Duration (sec) each chewing pose frame is held
+  powerCentreEase: 12,      // Historical easing speed to screen center (unused)
 
-  // feel
-  swatNudge: 0,      // optional extra speed when swatting (0 = off)
-  yuckFaceTime: 0.55,   // seconds the baby looks disgusted after eating broccoli
-  swatHoldDuration: 0.18,   // seconds the swat remains active for tapped timing tolerance
+  // Broccoli Barrage
+  barrageMinCooldown: 50,   // Min delay (sec) between random barrages
+  barrageDuration: 6,       // Active duration (sec) of a barrage
+  barrageSpawnEvery: 0.12,  // Rapid spawn rate (sec) of broccoli during barrage
+  barrageSpeedMult: 1.7,    // Speed multiplier of items during barrage
+  barrageChancePerSec: 0.08,// Probability per second of triggering a barrage after cooldown
 
-  // power-up: a rare sparkling disco ball — while the buff is active it doubles
-  // banana points, makes ONLY bananas count (broccoli is harmless but scores
-  // nothing), doubles item speed (and spawn rate to match), doubles the baby's
-  // size, snaps the baby to dead-centre of the screen, and throws a disco that
-  // recolours the BACKGROUND only (sprites keep their colours). Lasts
-  // powerupDuration seconds, then the board is wiped clear so the player gets a
-  // beat to reset. Deliberately rare.
-  powerupChance: 0.03,   // fraction of real-item spawns that become powerups
-  powerupDuration: 10,      // seconds the buff lasts
-  eatFrameTime: 0.30,   // seconds each laughing frame holds while the two
-  // baby-eat poses alternate during the buff
-  powerupSpinRate: 3,      // rad/sec the disco ball spins while incoming
-  powerupSpeedMult: 1.3,      // item speed multiplier while the buff is active
-  powerupBabyScale: 2,      // baby size multiplier while the buff is active
-  // The disco ball is the ONLY trigger: catch it, then survive this many
-  // seconds with NO loss of energy (no broccoli eaten) and NO loss of points.
-  // A meter fills one segment per second; complete it and the buff activates.
-  powerupChargeTime: 2,     // seconds of clean play after the disco ball
+  // Broccoli Volley
+  volleyChance: 0.12,       // Probability of triggering a volley on any spawn tick
+  volleyCount: 3,           // Number of broccoli items launched in the volley
+  volleySpeedMult: 2,       // Speed multiplier of volley items
+  volleyGap: 0.17,          // Launch gap (sec) between successive volley items
 
-  // barrage: a terrifying barrage of broccoli only that is fast and furious.
-  barrageMinCooldown: 50,   // seconds minimum between barrages
-  barrageDuration: 6,    // seconds the barrage lasts
-  barrageSpawnEvery: 0.12, // spawn interval during a barrage (very rapid fire)
-  barrageSpeedMult: 1.7,  // speed multiplier for barrage items
-  barrageChancePerSec: 0.08, // chance per second to trigger barrage after cooldown
-
-  // broccoli volley: a rare triple-shot of broccoli fired in quick succession
-  // at double speed (replaces a normal spawn tick when it triggers).
-  volleyChance: 0.2,   // chance per spawn tick of a broccoli volley (2%)
-  volleyCount: 3,      // broccoli launched in the volley
-  volleySpeedMult: 2,      // speed multiplier for volley broccoli
-  volleyGap: 0.25,   // seconds between successive shots in the volley
-
-  // sprite sizing — food is drawn from illustrations in assets/.
-  // foodSpriteScale: longest side of a food sprite = itemRadius * this.
-  foodSpriteScale: 2.8,
-
-  // color (kept for reference; sprites now provide the look)
-  bananaFill: '#ffd23f',
-  broccoliFill: '#5fae46',
-
-  // swatted item ricochet (broccoli swatted away, or banana rejected)
-  swatBackSpeed: 520,    // px/sec launch speed of a swatted item
-  swatSpinMax: 12,     // max rad/sec spin while flying off
+  // ==========================================
+  // 8. VISUAL ASSETS STYLING
+  // ==========================================
+  foodSpriteScale: 2.5,     // Scaling multiplier for drawn item sprites
+  bananaFill: '#ffd23f',     // Fallback color for banana vector fills
+  broccoliFill: '#5fae46',  // Fallback color for broccoli vector fills
 };
