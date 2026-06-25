@@ -194,42 +194,31 @@ const ART = {
   },
 
   // Broccoli sprite. While the power-up buff is active the broccoli is
-  // harmless, so it's drawn in "disco" mode: tinted to the same flashing,
-  // hue-cycling colour as the disco ball and wrapped in a matching glow halo
-  // (the colour shifts over time so it pulses/flashes in sync with the party).
+  // harmless, so it's drawn in "disco" mode: its own pixels are recoloured to a
+  // flashing, hue-cycling colour (via a canvas hue-rotate filter, so only the
+  // broccoli itself changes — never a surrounding box) and a matching glow is
+  // cast around its actual silhouette with a drop-shadow that flashes in sync.
   broccoli(ctx, x, y, r, disco){
     const size = r * CONFIG.foodSpriteScale;
     if (!disco){
       ART.sprite(ctx, IMG.broccoli, x, y, size);
       return;
     }
+    const img = IMG.broccoli;
+    if (!img.complete || !img.naturalWidth){ return; }
     const t   = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
-    const hue = (t * 160) % 360;                 // fast cycle = flashing
-    const rad = size * 0.5;
-    // ---- glowing halo behind the broccoli, matching the cycling hue
+    const deg = Math.floor((t * 200) % 360);     // fast cycle = flashing
+    const hue = (deg + 90) % 360;                 // approx resulting sprite hue (broccoli starts ~green/90°)
+    const glow = (12 + 8 * Math.sin(t * 8)).toFixed(1);   // pulsing glow radius
+    const k = size / Math.max(img.naturalWidth, img.naturalHeight);
+    const w = img.naturalWidth * k, h = img.naturalHeight * k;
     ctx.save();
-    ctx.translate(x, y);
-    ctx.globalCompositeOperation = 'lighter';
-    const pulse = 0.45 + 0.25 * Math.sin(t * 8);
-    const halo = ctx.createRadialGradient(0, 0, rad * 0.5, 0, 0, rad * 1.6);
-    halo.addColorStop(0, 'hsla(' + hue + ',100%,65%,' + pulse.toFixed(3) + ')');
-    halo.addColorStop(1, 'hsla(' + hue + ',100%,65%,0)');
-    ctx.fillStyle = halo;
-    ctx.beginPath(); ctx.arc(0, 0, rad * 1.6, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-    // ---- the broccoli sprite, recoloured to the disco hue (tint clipped to
-    // the sprite's own pixels via 'source-atop')
-    ctx.save();
-    ctx.translate(x, y);
-    ART.sprite(ctx, IMG.broccoli, 0, 0, size);
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'hsla(' + hue + ',95%,60%,0.85)';
-    ctx.fillRect(-rad, -rad, size, size);
-    // a bright shimmer on top so it reads glossy like the mirror ball
-    // (still 'source-atop' so it stays clipped to the sprite's pixels)
-    const shimmer = 0.3 + 0.3 * Math.sin(t * 10);
-    ctx.fillStyle = 'hsla(' + ((hue + 40) % 360) + ',100%,80%,' + shimmer.toFixed(3) + ')';
-    ctx.fillRect(-rad, -rad, size, size);
+    // Filter recolours the sprite's real pixels and draws a glow that hugs its
+    // silhouette — both respect the sprite's transparency, so we paint within
+    // the lines instead of over a rectangle.
+    ctx.filter = 'hue-rotate(' + deg + 'deg) saturate(2.2) brightness(1.15)' +
+                 ' drop-shadow(0 0 ' + glow + 'px hsl(' + hue + ',100%,60%))';
+    ctx.drawImage(img, x - w/2, y - h/2, w, h);
     ctx.restore();
   },
 
