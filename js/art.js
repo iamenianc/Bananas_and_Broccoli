@@ -122,27 +122,47 @@ function _mkStars(seed, count){
 }
 const _STARS = _mkStars(0x9e3779b1, 70);
 
-// Recolour a sprite to a target hue on a cached offscreen canvas, keeping the
-// sprite's own shading (luminosity) and transparency. Uses the 'color' blend
-// mode then re-masks with 'destination-in' so the result is the same shape as
-// the source, just a different colour. Returns the offscreen canvas.
-let _tintCanvas = null;
+// Recolour a sprite to a target hue, keeping the sprite's own shading
+// (luminosity) and transparency. Uses the 'color' blend mode then re-masks with
+// 'destination-in' so the result is the same shape as the source, just a
+// different colour. Recolouring is EXPENSIVE, so each quantised hue is composed
+// once into its own offscreen canvas and cached forever — after a brief warmup
+// the hot path is a single drawImage, which keeps mobile at full frame rate.
+const _TINT_STEP = 8;                  // hue quantisation (deg); ~45 cached frames
+const _TINT_SIZE = 256;                // cached at display-ish res (source is 1024²);
+                                       // keeps ~45 frames near ~11MB instead of ~180MB
+const _tintCache = new Map();          // hueStep -> canvas
 function _tintSprite(img, hue){
-  const w = img.naturalWidth, h = img.naturalHeight;
-  if (!_tintCanvas) _tintCanvas = document.createElement('canvas');
-  const c = _tintCanvas;
-  if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+  const step = Math.floor(hue / _TINT_STEP) * _TINT_STEP;
+  let c = _tintCache.get(step);
+  if (c) return c;
+  const s = _TINT_SIZE;
+  c = document.createElement('canvas');
+  c.width = s; c.height = s;
   const o = c.getContext('2d');
-  o.globalCompositeOperation = 'source-over';
-  o.clearRect(0, 0, w, h);
-  o.drawImage(img, 0, 0);                 // original sprite
+  o.drawImage(img, 0, 0, s, s);           // original sprite, downscaled
   o.globalCompositeOperation = 'color';   // swap hue/sat, keep luminosity
-  o.fillStyle = 'hsl(' + hue + ',100%,50%)';
-  o.fillRect(0, 0, w, h);
+  o.fillStyle = 'hsl(' + step + ',100%,50%)';
+  o.fillRect(0, 0, s, s);
   o.globalCompositeOperation = 'destination-in';
-  o.drawImage(img, 0, 0);                 // re-mask to sprite alpha (no box)
+  o.drawImage(img, 0, 0, s, s);           // re-mask to sprite alpha (no box)
   o.globalCompositeOperation = 'source-over';
+  _tintCache.set(step, c);
   return c;
+}
+
+// Cached radial glow gradients (one per hue step), built at full alpha so the
+// per-frame pulse can ride on ctx.globalAlpha instead of rebuilding gradients.
+const _glowCache = new Map();          // hueStep -> CanvasGradient
+function _glowGradient(ctx, hue, rad){
+  const step = Math.floor(hue / _TINT_STEP) * _TINT_STEP;
+  let g = _glowCache.get(step);
+  if (g) return g;
+  g = ctx.createRadialGradient(0, 0, rad * 0.4, 0, 0, rad * 1.5);
+  g.addColorStop(0, 'hsl(' + step + ',100%,60%)');
+  g.addColorStop(1, 'hsla(' + step + ',100%,60%,0)');
+  _glowCache.set(step, g);
+  return g;
 }
 
 // The sun: a warm core wrapped in a soft halo.
@@ -237,16 +257,13 @@ const ART = {
     const k = size / Math.max(img.naturalWidth, img.naturalHeight);
     const w = img.naturalWidth * k, h = img.naturalHeight * k;
     const rad = size * 0.5;
-    // ---- pulsing glow halo behind, in the same hue (circular gradient, fades
-    // to fully transparent — no box)
+    // ---- pulsing glow halo behind, in the same hue (cached gradient; the
+    // pulse rides on globalAlpha so nothing is rebuilt per frame)
     ctx.save();
     ctx.translate(x, y);
     ctx.globalCompositeOperation = 'lighter';
-    const pulse = 0.4 + 0.25 * Math.sin(t * 8);
-    const halo = ctx.createRadialGradient(0, 0, rad * 0.4, 0, 0, rad * 1.5);
-    halo.addColorStop(0, 'hsla(' + hue + ',100%,60%,' + pulse.toFixed(3) + ')');
-    halo.addColorStop(1, 'hsla(' + hue + ',100%,60%,0)');
-    ctx.fillStyle = halo;
+    ctx.globalAlpha = 0.4 + 0.25 * Math.sin(t * 8);
+    ctx.fillStyle = _glowGradient(ctx, hue, rad);
     ctx.beginPath(); ctx.arc(0, 0, rad * 1.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
     // ---- the recoloured broccoli (alpha-masked to its own shape)
