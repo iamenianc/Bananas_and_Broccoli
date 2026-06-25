@@ -122,6 +122,29 @@ function _mkStars(seed, count){
 }
 const _STARS = _mkStars(0x9e3779b1, 70);
 
+// Recolour a sprite to a target hue on a cached offscreen canvas, keeping the
+// sprite's own shading (luminosity) and transparency. Uses the 'color' blend
+// mode then re-masks with 'destination-in' so the result is the same shape as
+// the source, just a different colour. Returns the offscreen canvas.
+let _tintCanvas = null;
+function _tintSprite(img, hue){
+  const w = img.naturalWidth, h = img.naturalHeight;
+  if (!_tintCanvas) _tintCanvas = document.createElement('canvas');
+  const c = _tintCanvas;
+  if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+  const o = c.getContext('2d');
+  o.globalCompositeOperation = 'source-over';
+  o.clearRect(0, 0, w, h);
+  o.drawImage(img, 0, 0);                 // original sprite
+  o.globalCompositeOperation = 'color';   // swap hue/sat, keep luminosity
+  o.fillStyle = 'hsl(' + hue + ',100%,50%)';
+  o.fillRect(0, 0, w, h);
+  o.globalCompositeOperation = 'destination-in';
+  o.drawImage(img, 0, 0);                 // re-mask to sprite alpha (no box)
+  o.globalCompositeOperation = 'source-over';
+  return c;
+}
+
 // The sun: a warm core wrapped in a soft halo.
 function _sun(ctx, x, y, rad, core, glow, alpha){
   if (alpha <= 0) return;
@@ -195,9 +218,11 @@ const ART = {
 
   // Broccoli sprite. While the power-up buff is active the broccoli is
   // harmless, so it's drawn in "disco" mode: its own pixels are recoloured to a
-  // flashing, hue-cycling colour (via a canvas hue-rotate filter, so only the
-  // broccoli itself changes — never a surrounding box) and a matching glow is
-  // cast around its actual silhouette with a drop-shadow that flashes in sync.
+  // flashing, hue-cycling colour and given a matching glow. The recolour is
+  // done on an offscreen canvas with the 'color' blend mode (keeps the
+  // broccoli's shading, only swaps the hue) and re-masked to the sprite's alpha
+  // — so the colour stays inside the silhouette and it works on every browser
+  // (including mobile Safari, where ctx.filter is unreliable).
   broccoli(ctx, x, y, r, disco){
     const size = r * CONFIG.foodSpriteScale;
     if (!disco){
@@ -207,19 +232,25 @@ const ART = {
     const img = IMG.broccoli;
     if (!img.complete || !img.naturalWidth){ return; }
     const t   = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
-    const deg = Math.floor((t * 200) % 360);     // fast cycle = flashing
-    const hue = (deg + 90) % 360;                 // approx resulting sprite hue (broccoli starts ~green/90°)
-    const glow = (12 + 8 * Math.sin(t * 8)).toFixed(1);   // pulsing glow radius
+    const hue = Math.floor((t * 200) % 360);     // fast cycle = flashing
+    const tinted = _tintSprite(img, hue);
     const k = size / Math.max(img.naturalWidth, img.naturalHeight);
     const w = img.naturalWidth * k, h = img.naturalHeight * k;
+    const rad = size * 0.5;
+    // ---- pulsing glow halo behind, in the same hue (circular gradient, fades
+    // to fully transparent — no box)
     ctx.save();
-    // Filter recolours the sprite's real pixels and draws a glow that hugs its
-    // silhouette — both respect the sprite's transparency, so we paint within
-    // the lines instead of over a rectangle.
-    ctx.filter = 'hue-rotate(' + deg + 'deg) saturate(2.2) brightness(1.15)' +
-                 ' drop-shadow(0 0 ' + glow + 'px hsl(' + hue + ',100%,60%))';
-    ctx.drawImage(img, x - w/2, y - h/2, w, h);
+    ctx.translate(x, y);
+    ctx.globalCompositeOperation = 'lighter';
+    const pulse = 0.4 + 0.25 * Math.sin(t * 8);
+    const halo = ctx.createRadialGradient(0, 0, rad * 0.4, 0, 0, rad * 1.5);
+    halo.addColorStop(0, 'hsla(' + hue + ',100%,60%,' + pulse.toFixed(3) + ')');
+    halo.addColorStop(1, 'hsla(' + hue + ',100%,60%,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, rad * 1.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
+    // ---- the recoloured broccoli (alpha-masked to its own shape)
+    ctx.drawImage(tinted, x - w/2, y - h/2, w, h);
   },
 
   // The baby, drawn from full-colour cartoon sprites (black hair, blue
