@@ -12,7 +12,7 @@ const CONFIG = {
   worldW: 1560,             // Fixed virtual world width (landscape aspect ratio)
   worldH: 720,              // Fixed virtual world height
   moveZoneFrac: 0.4,        // Left fraction of screen used as touch flap pad (right 60% is swat/catch)
-  dayNightCycleSec: 120,    // Seconds for one full procedural day→night→day cycle
+  dayNightCycleSec: 100,    // Seconds for one full procedural day→night→day cycle
 
   // ==========================================
   // 2. BABY CHARACTER (PLAYER) MOVEMENT & STATS
@@ -65,9 +65,9 @@ const CONFIG = {
   pointsPerLevel: 88,       // Score required to complete Level 1
   levelPointsGrowth: 1.1,  // Exponential target score growth per level
   levelFlashTime: 1.4,      // Duration (sec) the new level banner flashes at center
-  baseSpeed: 562.5,         // Initial item travel speed (px/sec) at Level 1
-  maxSpeed: 1200,           // Absolute ceiling speed that progression eases toward
-  levelSpeedTau: 5,         // Progression curvature rate (smaller = faster speed growth)
+  baseSpeed: 680,         // Initial item travel speed (px/sec) at Level 1
+  maxSpeed: 1800,           // Absolute ceiling speed that progression eases toward
+  levelSpeedTau: 4.5,         // Progression curvature rate (smaller = faster speed growth)
   spawnEveryStart: 0.60,    // Initial spawn interval (sec) during Level 1
   spawnEveryMin: 0.28,      // Fastest possible spawn interval at high levels
   spawnRampPerLevel: 0.04,  // Decrement to spawn interval per level increase
@@ -111,7 +111,7 @@ const CONFIG = {
   powerupDuration: 6,       // Active duration (sec) of the power-up buff
   powerupChargeTime: 2,     // Clean play time (sec) required to charge the buff after catch
   powerupLifeRestore: 3,    // Life points restored immediately on catch
-  powerupSpeedMult: 1.3,    // Item speed multiplier during active power-up
+  powerupSpeedMult: 1.6,    // Item speed multiplier during active power-up
   powerupBabyScale: 2,      // Baby scale multiplier during active power-up
   powerupSpinRate: 3,       // Rotation speed (rad/sec) of the disco ball item
   eatFrameTime: 0.30,       // Duration (sec) each chewing pose frame is held

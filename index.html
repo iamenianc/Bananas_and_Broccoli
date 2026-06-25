@@ -18,7 +18,7 @@
   <canvas id="game"></canvas>
 
   <div id="hud" class="playfield-overlay">
-    <div class="hud-spacer"></div>
+    <button id="muteBtn" class="hud-btn" aria-label="Mute sound">🔊</button>
     <div class="hud-bars">
       <div id="broccoli" aria-label="lives remaining"></div>
       <div id="progress" aria-label="level progress"><span id="progressFill"></span></div>
@@ -55,11 +55,12 @@
     <p>Bananas &amp; Broccoli plays in landscape.</p>
   </div>
 
-  <!-- Game scripts. Load order matters: config -> art -> engine.
+  <!-- Game scripts. Load order matters: config -> art -> audio -> engine.
        (Plain scripts share globals CONFIG / ART so the game still
        runs when opened directly via file://.) -->
   <script src="js/config.js"></script>
   <script src="js/art.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/engine.js"></script>
 </body>
 </html>

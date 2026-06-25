@@ -77,6 +77,7 @@ function reset() {
   updateBroccoliHud();
   updatePowerMeter();
   updateLevelHud();
+  AUDIO.stopDiscoLoop();
 }
 
 // Show which difficulty level we're on in the corner.
@@ -129,6 +130,8 @@ function activatePowerup() {
   powerupTimer = CONFIG.powerupDuration;
   charging = false; chargeTimer = 0;
   updatePowerMeter();
+  AUDIO.playDiscoActivation();
+  AUDIO.startDiscoLoop();
 }
 
 // Render the charge meter: one segment per second of powerupChargeTime, the
@@ -377,6 +380,7 @@ function resolve(it) {
   const swatting = holding || swatHoldTimer > 0;
   if (it.type === 'powerup') {
     if (swatting) {
+      AUDIO.playSwatBanana();
       it.flying = true;
       ricochet(it);
     } else {
@@ -385,6 +389,7 @@ function resolve(it) {
         broccoliEaten = Math.max(0, broccoliEaten - CONFIG.powerupLifeRestore);  // refund health
         updateBroccoliHud();
       }
+      AUDIO.playChargeStart();
       startCharge();                    // begin the clean-play charge attempt
     }
   } else if (it.type === 'banana') {
@@ -393,6 +398,7 @@ function resolve(it) {
       // can never end the game on its own, and it does NOT cancel the disco-ball
       // charge (only taking broccoli damage does that).
       score -= CONFIG.bananaSwatPenalty;
+      AUDIO.playSwatBanana();
       it.flying = true;
       it.peeled = true;
       ricochet(it);
@@ -400,6 +406,7 @@ function resolve(it) {
       it.resolved = true;
       score += CONFIG.pointsPerBanana;
       bananasEaten++;                   // one banana eaten (cumulative across levels)
+      AUDIO.playCatchBanana();
       // eating a banana also restores 1% of the life bar
       if (broccoliEaten > 0) {
         broccoliEaten = Math.max(0, broccoliEaten -
@@ -416,6 +423,7 @@ function resolve(it) {
       } else {
         score -= CONFIG.penaltyPoints;
         broccoliEaten++;
+        AUDIO.playEatBroccoli();
         loseCharge();                   // taking broccoli damage cancels the charge
         yuckTimer = CONFIG.yuckFaceTime;
         updateBroccoliHud();
@@ -429,7 +437,12 @@ function resolve(it) {
       // swatted away (good). A precise TAP — finger already released, the swat
       // still active only via the tolerance window — is rewarded with points; a
       // press-and-hold swat (finger still down) is safe but scores nothing.
-      if (!holding && swatHoldTimer > 0) score += CONFIG.broccoliTapPoints;
+      if (!holding && swatHoldTimer > 0) {
+        score += CONFIG.broccoliTapPoints;
+        AUDIO.playSwatBonus();
+      } else {
+        AUDIO.playSwatBroccoli();
+      }
       it.flying = true;
       it.touchedBaby = true;
       ricochet(it);
@@ -473,6 +486,7 @@ function update(dt) {
       if (Math.random() < CONFIG.barrageChancePerSec * dt) {
         barrageTimer = CONFIG.barrageDuration;
         spawnTimer = 0; // Trigger an immediate burst
+        AUDIO.playBarrageWarning();
       }
     }
   }
@@ -621,6 +635,7 @@ function update(dt) {
     powerupTimer -= dt;
     if (powerupTimer <= 0) {
       powerupTimer = 0;
+      AUDIO.stopDiscoLoop();
     }
   }
 }
@@ -701,7 +716,9 @@ function loop(t) {
 
 /* ---- state transitions ---- */
 function startGame() {
+  AUDIO.init();
   reset();
+  AUDIO.startBGM('normal');
   state = State.PLAY;
   document.getElementById('start').classList.add('hidden');
   document.getElementById('gameover').classList.add('hidden');
@@ -711,6 +728,7 @@ function startGame() {
 function gameOver(reason) {
   state = State.OVER;
   loseCharge();                         // hide the charge meter
+  AUDIO.stopBGM();
   document.getElementById('goReason').textContent = reason;
   document.getElementById('finalStats').textContent =
     'Level ' + level + ' reached · ' + bananasEaten + ' bananas eaten';
@@ -734,6 +752,7 @@ function beginSwat() {
 // baby climbs flappy-bird style. Ignored while powered up (the baby is centred).
 function flap() {
   babyVelY = Math.max(-CONFIG.flapRiseMax, babyVelY - CONFIG.flapImpulse);
+  AUDIO.playFlap();
 }
 function down(e) {
   if (state === State.PLAY) {
@@ -777,8 +796,35 @@ function keyup(e) {
 window.addEventListener('keydown', keydown, { passive: false });
 window.addEventListener('keyup', keyup);
 
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('retryBtn').addEventListener('click', startGame);
+document.getElementById('startBtn').addEventListener('click', () => {
+  AUDIO.playButtonClick();
+  startGame();
+});
+document.getElementById('retryBtn').addEventListener('click', () => {
+  AUDIO.playButtonClick();
+  startGame();
+});
+
+// Mute toggle listener
+const muteBtn = document.getElementById('muteBtn');
+if (muteBtn) {
+  muteBtn.textContent = AUDIO.isMuted ? '🔇' : '🔊';
+  muteBtn.addEventListener('click', () => {
+    const isMuted = AUDIO.toggleMute();
+    muteBtn.textContent = isMuted ? '🔇' : '🔊';
+  });
+}
+
+// Browser tab visibility lifecycle handling
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    AUDIO.suspend();
+  } else {
+    if (state === State.PLAY) {
+      AUDIO.resume();
+    }
+  }
+});
 
 /* TESTING MODE: caching is disabled so every refresh loads fresh from the
    server. Unregister any previously-installed service worker and clear all

@@ -152,3 +152,23 @@ html, body {
   background:#ffd23f;                          /* yellow */
   transition:width .15s ease-out;
 }
+
+/* Mute Toggle Button in HUD */
+.hud-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 3px solid #000;
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  pointer-events: auto; /* override hud pointer-events: none */
+  transition: background-color 0.1s, transform 0.1s;
+}
+.hud-btn:active {
+  background: #ececec;
+  transform: scale(0.95);
+}
+
