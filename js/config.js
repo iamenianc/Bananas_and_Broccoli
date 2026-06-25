@@ -108,7 +108,7 @@ const CONFIG = {
 
   // Power-Up Mode (Disco Ball)
   powerupChance: 0.03,      // Fraction of item spawns that turn into disco balls
-  powerupDuration: 10,      // Active duration (sec) of the power-up buff
+  powerupDuration: 6,       // Active duration (sec) of the power-up buff
   powerupChargeTime: 2,     // Clean play time (sec) required to charge the buff after catch
   powerupLifeRestore: 3,    // Life points restored immediately on catch
   powerupSpeedMult: 1.3,    // Item speed multiplier during active power-up

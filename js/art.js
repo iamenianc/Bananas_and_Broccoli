@@ -193,8 +193,44 @@ const ART = {
     ART.sprite(ctx, IMG.bananaPeeled, x, y, r * CONFIG.foodSpriteScale);
   },
 
-  broccoli(ctx, x, y, r){
-    ART.sprite(ctx, IMG.broccoli, x, y, r * CONFIG.foodSpriteScale);
+  // Broccoli sprite. While the power-up buff is active the broccoli is
+  // harmless, so it's drawn in "disco" mode: tinted to the same flashing,
+  // hue-cycling colour as the disco ball and wrapped in a matching glow halo
+  // (the colour shifts over time so it pulses/flashes in sync with the party).
+  broccoli(ctx, x, y, r, disco){
+    const size = r * CONFIG.foodSpriteScale;
+    if (!disco){
+      ART.sprite(ctx, IMG.broccoli, x, y, size);
+      return;
+    }
+    const t   = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    const hue = (t * 160) % 360;                 // fast cycle = flashing
+    const rad = size * 0.5;
+    // ---- glowing halo behind the broccoli, matching the cycling hue
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalCompositeOperation = 'lighter';
+    const pulse = 0.45 + 0.25 * Math.sin(t * 8);
+    const halo = ctx.createRadialGradient(0, 0, rad * 0.5, 0, 0, rad * 1.6);
+    halo.addColorStop(0, 'hsla(' + hue + ',100%,65%,' + pulse.toFixed(3) + ')');
+    halo.addColorStop(1, 'hsla(' + hue + ',100%,65%,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, rad * 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // ---- the broccoli sprite, recoloured to the disco hue (tint clipped to
+    // the sprite's own pixels via 'source-atop')
+    ctx.save();
+    ctx.translate(x, y);
+    ART.sprite(ctx, IMG.broccoli, 0, 0, size);
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = 'hsla(' + hue + ',95%,60%,0.85)';
+    ctx.fillRect(-rad, -rad, size, size);
+    // a bright shimmer on top so it reads glossy like the mirror ball
+    // (still 'source-atop' so it stays clipped to the sprite's pixels)
+    const shimmer = 0.3 + 0.3 * Math.sin(t * 10);
+    ctx.fillStyle = 'hsla(' + ((hue + 40) % 360) + ',100%,80%,' + shimmer.toFixed(3) + ')';
+    ctx.fillRect(-rad, -rad, size, size);
+    ctx.restore();
   },
 
   // The baby, drawn from full-colour cartoon sprites (black hair, blue

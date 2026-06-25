@@ -656,7 +656,7 @@ function render() {
         ctx.translate(it.x, it.y);
         ctx.rotate(it.rot || 0);
         if (it.peeled) ART.bananaPeeled(ctx, 0, 0, it.r);
-        else ART.broccoli(ctx, 0, 0, it.r);
+        else ART.broccoli(ctx, 0, 0, it.r, powerupTimer > 0);
         ctx.restore();
       }
     } else if (it.type === 'powerup') {
@@ -664,7 +664,7 @@ function render() {
     } else if (it.type === 'banana') {
       ART.banana(ctx, it.x, it.y, it.r);
     } else {
-      ART.broccoli(ctx, it.x, it.y, it.r);
+      ART.broccoli(ctx, it.x, it.y, it.r, powerupTimer > 0);
     }
   }
   const swatting = holding || swatHoldTimer > 0;
