@@ -394,10 +394,16 @@ function resolve(it) {
     }
   } else if (it.type === 'banana') {
     if (swatting) {
-      // Swatting a banana costs POINTS only — it no longer drains a life, so it
-      // can never end the game on its own, and it does NOT cancel the disco-ball
+      // Swatting a banana deducts points and deals health damage equal to the
+      // health a banana would have restored — the inverse of eating one.
+      // It cannot end the game on its own and does NOT cancel the disco-ball
       // charge (only taking broccoli damage does that).
       score -= CONFIG.bananaSwatPenalty;
+      broccoliEaten = Math.min(
+        broccoliEaten + CONFIG.bananaLifeRestorePct * CONFIG.broccoliEatenLimit,
+        CONFIG.broccoliEatenLimit - 1
+      );
+      updateBroccoliHud();
       AUDIO.playSwatBanana();
       it.flying = true;
       it.peeled = true;
