@@ -99,18 +99,18 @@ const CONFIG = {
   bananaSwatPenalty: 2,     // Score deducted when swatting a banana away (points only — no life loss)
   penaltyPoints: 0,         // Score deducted when eating broccoli
   broccoliTapPoints: 2,     // Points awarded for swatting broccoli away with a precise TAP
-  broccoliEatenLimit: 10,   // Total damage allowed before Game Over (life bar capacity)
-  bananaLifeRestorePct: 0.02,// Life restoration fraction (percentage of limit) per banana eaten
+  broccoliEatenLimit: 8,   // Total damage allowed before Game Over (life bar capacity)
+  bananaLifeRestorePct: 0.01,// Life restoration fraction (percentage of limit) per banana eaten
 
   // ==========================================
   // 7. SPECIAL GAME EVENTS
   // ==========================================
 
   // Power-Up Mode (Disco Ball)
-  powerupChance: 0.03,      // Fraction of item spawns that turn into disco balls
+  powerupChance: 0.02,      // Fraction of item spawns that turn into disco balls
   powerupDuration: 6,       // Active duration (sec) of the power-up buff
-  powerupChargeTime: 2,     // Clean play time (sec) required to charge the buff after catch
-  powerupLifeRestore: 3,    // Life points restored immediately on catch
+  powerupChargeTime: 3,     // Clean play time (sec) required to charge the buff after catch
+  powerupLifeRestore: 2,    // Life points restored immediately on catch
   powerupSpeedMult: 1.6,    // Item speed multiplier during active power-up
   powerupBabyScale: 2,      // Baby scale multiplier during active power-up
   powerupSpinRate: 3,       // Rotation speed (rad/sec) of the disco ball item
