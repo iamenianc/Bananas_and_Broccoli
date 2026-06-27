@@ -396,18 +396,21 @@ function resolve(it) {
     if (swatting) {
       // Swatting a banana deducts points and deals health damage equal to the
       // health a banana would have restored — the inverse of eating one.
-      // It cannot end the game on its own and does NOT cancel the disco-ball
-      // charge (only taking broccoli damage does that).
       score -= CONFIG.bananaSwatPenalty;
       broccoliEaten = Math.min(
         broccoliEaten + CONFIG.bananaLifeRestorePct * CONFIG.broccoliEatenLimit,
-        CONFIG.broccoliEatenLimit - 1
+        CONFIG.broccoliEatenLimit
       );
       updateBroccoliHud();
       AUDIO.playSwatBanana();
       it.flying = true;
       it.peeled = true;
       ricochet(it);
+      if (broccoliEaten >= CONFIG.broccoliEatenLimit) {
+        if (score < 0) score = 0;
+        updateProgressHud();
+        return 'you swatted too many bananas :(';
+      }
     } else {
       it.resolved = true;
       score += CONFIG.pointsPerBanana;
